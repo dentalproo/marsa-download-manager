@@ -143,11 +143,21 @@ jobs:
           mv "$tmp/out/ffmpeg.universal" "$tmp/out/ffmpeg"
           mv "$tmp/out/ffprobe.universal" "$tmp/out/ffprobe"
           chmod +x "$tmp/out/ffmpeg" "$tmp/out/ffprobe"
+          # Ad-hoc only (owner's decision on #100 and 2026-10-25: no Apple
+          # or Microsoft signing): lipo invalidates any signature, and an
+          # unsigned file is refused by macOS once it carries a quarantine
+          # mark. The release notes say "ad-hoc, not notarised".
+          codesign --force --sign - "$tmp/out/ffmpeg" "$tmp/out/ffprobe"
+          codesign --verify "$tmp/out/ffmpeg" "$tmp/out/ffprobe"
       - name: Name the build files
         shell: bash
         run: |
           set -euo pipefail
           out="${SRC_POSIX:-$RUNNER_TEMP}/out"
+          # The build file says how this binary was made (AGENTS.md,
+          # checklist item 6). One release asset per system, so the names
+          # do not overwrite each other when the artifacts are merged.
+          mv "$out/ffmpeg-build.txt" "$out/ffmpeg-build-${{ matrix.system }}.txt"
           case "${{ matrix.system }}" in
             windows-x86_64)
               mv "$out/ffmpeg.exe" "$out/ffmpeg-windows-x86_64.exe"
@@ -209,7 +219,7 @@ jobs:
           fi
           gh release create "$tag" \
             --title "FFmpeg $FFMPEG_VERSION (Marsa's build)" \
-            --notes "FFmpeg $FFMPEG_VERSION, built by Marsa from $FFMPEG_URL (SHA-256 $FFMPEG_SHA256). Marsa's own build: remux only, plus the native AAC encoder for audio-only m4a; no --enable-gpl, no --enable-nonfree, no external library (LGPL 2.1 or later)." \
+            --notes "FFmpeg $FFMPEG_VERSION, built by Marsa from $FFMPEG_URL (SHA-256 $FFMPEG_SHA256). Marsa's own build: remux only, plus the native AAC encoder for audio-only m4a; no --enable-gpl, no --enable-nonfree, no external library (LGPL 2.1 or later). The macOS files are signed ad-hoc only (a code signature, not notarised by Apple); the Windows and Linux files are not signed. The source, its signature, the licence texts and SHA256SUMS are the other assets." \
             "${files[@]}"
           echo "released $tag"
       - name: Upload the source to the release
@@ -223,13 +233,35 @@ jobs:
             "$src/$FFMPEG_TARBALL" \
             "$src/$FFMPEG_TARBALL.asc" \
             --clobber
+      - name: Upload the LGPL licence texts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/src"
+          lic="$RUNNER_TEMP/licence"
+          mkdir -p "$lic"
+          tar -xJf "$src/$FFMPEG_TARBALL" -C "$lic" --strip-components=1 \
+            "ffmpeg-$FFMPEG_VERSION/COPYING.LGPLv2.1" \
+            "ffmpeg-$FFMPEG_VERSION/COPYING.LGPLv3" \
+            "ffmpeg-$FFMPEG_VERSION/LICENSE.md"
+          gh release upload "$RELEASE_TAG" \
+            "$lic/COPYING.LGPLv2.1" \
+            "$lic/COPYING.LGPLv3" \
+            "$lic/LICENSE.md" \
+            --clobber
       - name: Upload the checksums
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           src="$RUNNER_TEMP/src"
-          sha256sum "$src/$FFMPEG_TARBALL" > SHA256SUMS
-          gh release upload "$RELEASE_TAG" \
-            SHA256SUMS \
-            --clobber
+          lic="$RUNNER_TEMP/licence"
+          sums="$RUNNER_TEMP/SHA256SUMS"
+          # Every file in the release except this one, by its release name.
+          {
+            (cd "$src" && sha256sum "$FFMPEG_TARBALL" "$FFMPEG_TARBALL.asc")
+            (cd artifacts && sha256sum ./*)
+            (cd "$lic" && sha256sum ./*)
+          } | sed 's# \./# #' > "$sums"
+          gh release upload "$RELEASE_TAG" "$sums" --clobber
