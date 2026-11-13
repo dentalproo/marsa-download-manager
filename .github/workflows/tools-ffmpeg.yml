@@ -42,8 +42,13 @@ jobs:
         include:
           - system: windows-x86_64
             runs-on: windows-latest
+            # MinGW links winpthread dynamically by default; the check after
+            # the build refuses a file that needs it (ADR-0009, checklist
+            # items 1, 17 and 18: only the system's own DLLs).
+            extra: '--extra-ldflags=-static'
           - system: windows-aarch64
             runs-on: windows-11-arm
+            extra: '--extra-ldflags=-static'
           - system: macos-universal
             runs-on: macos-latest
           - system: linux-x86_64
@@ -96,9 +101,13 @@ jobs:
         run: bash tools/ffmpeg/get-source.sh "${SRC_POSIX:-$RUNNER_TEMP}/src"
       - name: Build the distributed binaries
         shell: bash
+        env:
+          MARSA_FFMPEG_EXTRA: ${{ matrix.extra }}
         run: bash tools/ffmpeg/build.sh dist "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/out"
       - name: Build the test binaries
         shell: bash
+        env:
+          MARSA_FFMPEG_EXTRA: ${{ matrix.extra }}
         run: bash tools/ffmpeg/build.sh testgen "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/testgen"
       - name: Smoke test
         shell: bash
