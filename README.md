@@ -81,7 +81,7 @@ GPL-3.0-or-later. النص الكامل في [`LICENSE`](LICENSE).
 
 ينزّل مَرْسَى أدوات الفيديو من مصادرها الرسمية، ويتحقق من بصمة SHA-256 قبل كل تشغيل. ولا يملك مَرْسَى هذه الأدوات ولا يصدرها.
 
-- **FFmpeg / ffprobe**: نسخة LGPL مبنية من المصدر. مصدر البناء الكامل، وطريقته، في [إصدار tools-ffmpeg-8.1.3-1](https://github.com/dentalproo/marsa-download-manager/releases/tag/tools-ffmpeg-8.1.3-1). هذا البرنامج يستخدم كودًا من مشروع FFmpeg برخصة LGPL 2.1 أو أحدث.
+- **FFmpeg / ffprobe**: نسخة LGPL مبنية من المصدر. مصدر البناء الكامل، وطريقته، في [إصدار tools-ffmpeg-8.1.3-3](https://github.com/dentalproo/marsa-download-manager/releases/tag/tools-ffmpeg-8.1.3-3). هذا البرنامج يستخدم كودًا من مشروع FFmpeg برخصة LGPL 2.1 أو أحدث.
 - **yt-dlp**: برنامج حر بترخيص GPLv3+، ونسخه الرسمية من مشروعه.
 - **QuickJS-NG**: لتشغيل جافاسكربت يوتيوب محليًا، من مشروعه الرسمي.
 

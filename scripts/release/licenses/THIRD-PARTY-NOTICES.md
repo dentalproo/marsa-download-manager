@@ -12,9 +12,9 @@
 
 ### FFmpeg (ffmpeg وffprobe)
 
-يستعمل هذا البرنامج شيفرة من مشروع FFmpeg بترخيص LGPL 2.1 أو أحدث (نصه في `LGPL-2.1.txt` بجانب هذا الملف)، ويمكن تنزيل مصدرها من [إصدار tools-ffmpeg-8.1.3-1](https://github.com/dentalproo/marsa-download-manager/releases/tag/tools-ffmpeg-8.1.3-1)، ومعه طريقة البناء كاملة.
+يستعمل هذا البرنامج شيفرة من مشروع FFmpeg بترخيص LGPL 2.1 أو أحدث (نصه في `LGPL-2.1.txt` بجانب هذا الملف)، ويمكن تنزيل مصدرها من [إصدار tools-ffmpeg-8.1.3-3](https://github.com/dentalproo/marsa-download-manager/releases/tag/tools-ffmpeg-8.1.3-3)، ومعه طريقة البناء كاملة.
 
-- النسخة: FFmpeg 8.1.3، من بناء مَرْسَى (`8.1.3-1`)، من المصدر الرسمي دون أي تعديل، وبلا `--enable-gpl` ولا `--enable-nonfree` ولا أي مكتبة خارجية.
+- النسخة: FFmpeg 8.1.3، من بناء مَرْسَى (`8.1.3-3`)، من المصدر الرسمي دون أي تعديل، وبلا `--enable-gpl` ولا `--enable-nonfree` ولا أي مكتبة خارجية.
 - FFmpeg ملك أصحابه، وليس ملكًا لمَرْسَى: [ffmpeg.org](https://ffmpeg.org).
 - حقوق النشر © مطوّرو FFmpeg. ويأتي FFmpeg **بلا أي ضمان** (انظر `LGPL-2.1.txt`).
 
@@ -42,9 +42,9 @@ These tools are not in the installer. Marsa downloads them at the first video do
 
 ### FFmpeg (ffmpeg and ffprobe)
 
-This software uses code of FFmpeg licensed under the LGPLv2.1 (or later; the text is in `LGPL-2.1.txt` next to this file) and its source can be downloaded [here](https://github.com/dentalproo/marsa-download-manager/releases/tag/tools-ffmpeg-8.1.3-1), with the whole way it was built.
+This software uses code of FFmpeg licensed under the LGPLv2.1 (or later; the text is in `LGPL-2.1.txt` next to this file) and its source can be downloaded [here](https://github.com/dentalproo/marsa-download-manager/releases/tag/tools-ffmpeg-8.1.3-3), with the whole way it was built.
 
-- Version: FFmpeg 8.1.3, Marsa's build `8.1.3-1`, from the official source unchanged, without `--enable-gpl`, `--enable-nonfree` or any outside library.
+- Version: FFmpeg 8.1.3, Marsa's build `8.1.3-3`, from the official source unchanged, without `--enable-gpl`, `--enable-nonfree` or any outside library.
 - FFmpeg belongs to its authors, not to Marsa: [ffmpeg.org](https://ffmpeg.org).
 - Copyright © the FFmpeg developers. FFmpeg comes with **absolutely no warranty** (see `LGPL-2.1.txt`).
 

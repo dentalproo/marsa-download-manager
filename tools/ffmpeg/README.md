@@ -35,7 +35,7 @@
 
 ولا يُوسم الإصدار بـ«Latest» (`--latest=false`)، حتى يبقى `releases/latest` لإصدارات مَرْسَى نفسها.
 
-**التثبيت في الكود:** بعد نشر الإصدار تُنزَّل ملفاته وتُقارَن بـ `SHA256SUMS`، ثم تُكتب النسخة (`<النسخة>-<رقم>`) والبصمات في `pins-ffmpeg.txt` و`pins-ffprobe.txt` في PR مستقل. النسخة المثبّتة حاليًا `8.1.3-1`، وملفا ماك كلاهما ملف universal واحد. ويتأكد اختبار في `tools.rs` من أن الملفين بنفس النسخة، وأنها ليست أحدث من `source.env`. فتحديث FFmpeg على ثلاث خطوات:
+**التثبيت في الكود:** بعد نشر الإصدار تُنزَّل ملفاته وتُقارَن بـ `SHA256SUMS`، ثم تُكتب النسخة (`<النسخة>-<رقم>`) والبصمات في `pins-ffmpeg.txt` و`pins-ffprobe.txt` في PR مستقل. النسخة المثبّتة حاليًا `8.1.3-3`، وملفا ماك كلاهما ملف universal واحد. ويتأكد اختبار في `tools.rs` من أن الملفين بنفس النسخة، وأنها ليست أحدث من `source.env`. فتحديث FFmpeg على ثلاث خطوات:
 1. PR يغيّر `source.env` (والبصمات القديمة تبقى، فمَرْسَى ينزّل النسخة السابقة حتى الخطوة 3).
 2. بعد دمجه، tag `tools-ffmpeg-<النسخة الجديدة>-1` على `main`.
 3. بعد نجاح النشر، PR بالبصمات الجديدة.
@@ -44,15 +44,15 @@
 
 ## الأحجام الفعلية (FFmpeg 8.1.3)
 
-من سجل البناء في الـ CI ([تشغيل 40216280141](https://github.com/dentalproo/marsa-download-manager/actions/runs/40216280141))، بعد الربط الثابت، ومعه ما يحمّله كل ملف (`check-linked.sh`):
+من سجل البناء في الـ CI ([تشغيل 43508250172](https://github.com/dentalproo/marsa-download-manager/actions/runs/43508250172))، بعد الربط الثابت، ومعه ما يحمّله كل ملف (`check-linked.sh`):
 
 | النظام | `ffmpeg` | `ffprobe` | المجموع | ما يحمّله الملفان |
 |---|---|---|---|---|
-| ويندوز x64 | 2.52 MiB | 2.36 MiB | **4.88 MiB** | UCRT (`api-ms-win-crt-*`)، و`KERNEL32` و`bcrypt` و`SHELL32` |
-| ويندوز arm64 | 2.38 MiB | 2.22 MiB | **4.60 MiB** | مثل ويندوز x64 |
-| ماك (universal، موقَّع ad-hoc) | 5.25 MiB | 4.89 MiB | **10.14 MiB** | `libSystem`، وأُطر CoreFoundation وCoreMedia وCoreVideo |
-| لينكس x64 | 2.69 MiB | 2.51 MiB | **5.20 MiB** | `libc` و`libm` |
-| لينكس arm64 | 2.73 MiB | 2.56 MiB | **5.29 MiB** | `libc` و`libm` و`ld-linux-aarch64` |
+| ويندوز x64 | 2.52 MiB | 2.36 MiB | **4.89 MiB** | UCRT (`api-ms-win-crt-*`)، و`KERNEL32` و`bcrypt` و`SHELL32` |
+| ويندوز arm64 | 2.55 MiB | 2.39 MiB | **4.94 MiB** | مثل ويندوز x64 |
+| ماك (universal، موقَّع ad-hoc) | 5.24 MiB | 4.89 MiB | **10.13 MiB** | `libSystem`، وأُطر CoreFoundation وCoreMedia وCoreVideo |
+| لينكس x64 | 2.66 MiB | 2.48 MiB | **5.14 MiB** | `libc` و`libm` |
+| لينكس arm64 | 2.75 MiB | 2.56 MiB | **5.32 MiB** | `libc` و`libm` و`ld-linux-aarch64` |
 
 **ملاحظات على الأحجام:**
 - ملف ماك أكبر من غيره لأنه يحمل نسختين، واحدة لكل معمارية، ومعهما توقيع ad-hoc (نحو 100 KB).

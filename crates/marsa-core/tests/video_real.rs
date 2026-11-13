@@ -12,8 +12,8 @@
 //!
 //! On the CI a missing tool fails these tests, except `ffmpeg-testgen`
 //! while the cache has none yet (`MARSA_TEST_NO_TESTGEN`, set by ci.yml
-//! with a warning: ffmpeg.yml builds it). On a developer's machine
-//! without them, each test says so on stderr and returns.
+//! with a warning: the FFmpeg tools workflow builds it). On a developer's
+//! machine without them, each test says so on stderr and returns.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -31,14 +31,6 @@ struct Tools {
 }
 
 fn tools() -> Option<Tools> {
-    // Until Marsa publishes its first `tools-ffmpeg` release there is no
-    // signed ffmpeg for CI to download, so CI sets this and the real video
-    // tests do not run (with a warning in the workflow). Remove this once
-    // the release exists; see ROADMAP, phase 3.
-    if std::env::var_os("MARSA_TEST_VIDEO_SKIP").is_some() {
-        eprintln!("NOT RUN: MARSA_TEST_VIDEO_SKIP is set (no tools-ffmpeg release yet)");
-        return None;
-    }
     let var = |name: &str| std::env::var_os(name).map(PathBuf::from);
     match (
         var("MARSA_TEST_YT_DLP"),
@@ -52,7 +44,7 @@ fn tools() -> Option<Tools> {
         }),
         (Some(_), Some(_), None) if std::env::var_os("MARSA_TEST_NO_TESTGEN").is_some() => {
             eprintln!(
-                "NOT RUN: ffmpeg-testgen is not in the CI's cache yet (ffmpeg.yml builds it)"
+                "NOT RUN: ffmpeg-testgen is not in the CI's cache yet (the FFmpeg tools workflow builds it)"
             );
             None
         }

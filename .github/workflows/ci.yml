@@ -233,12 +233,16 @@ jobs:
           if ((Get-Volume -DriveLetter X).FileSystemType -ne 'NTFS') { throw 'X: is not NTFS' }
           'MARSA_TEST_NTFS=X:\' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       # The real tools for crates/marsa-jsbox/tests/jsbox.rs, each by its
-      # pin: QuickJS-NG and yt-dlp, from their own projects.
-      #
-      # The real video tests need Marsa's own ffmpeg build, which has no
-      # published release yet, so CI sets MARSA_TEST_VIDEO_SKIP and the
-      # workflow says so. Remove that once the first tools-ffmpeg release
-      # exists (ROADMAP, phase 3).
+      # pin: QuickJS-NG and yt-dlp from their own projects, and Marsa's own
+      # ffmpeg and ffprobe from the tools-ffmpeg release (ADR-0009). The
+      # test-only build, which makes the media, comes from the cache the
+      # FFmpeg tools workflow fills (actions/cache, never the release).
+      - name: The test-only FFmpeg build (if the cache has it)
+        id: testgen
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/testgen
+          key: ffmpeg-testgen-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/ffmpeg/source.env', 'tools/ffmpeg/build.sh', 'tools/ffmpeg/configure-testgen.txt') }}
       - name: Video tools for the tests
         shell: bash
         timeout-minutes: 10
@@ -250,12 +254,18 @@ jobs:
           qjs="$(bash scripts/get-qjs.sh "$t/quickjs")"
           # qjs --help exits with 1 after printing its version.
           { "$qjs" --help || true; } | head -n 1
+          ffmpeg="$(bash scripts/get-ffmpeg.sh "$t/ffmpeg")"
           {
             echo "MARSA_TEST_YT_DLP=$ytdlp"
             echo "MARSA_TEST_QJS=$qjs"
-            echo "MARSA_TEST_VIDEO_SKIP=1"
+            echo "MARSA_TEST_FFMPEG_DIR=$ffmpeg"
           } >> "$GITHUB_ENV"
-          echo "::warning::the real video tests do not run: no tools-ffmpeg release yet"
+          if [ -x "$RUNNER_TEMP/testgen/ffmpeg-testgen" ] || [ -x "$RUNNER_TEMP/testgen/ffmpeg-testgen.exe" ]; then
+            echo "MARSA_TEST_FFMPEG_TESTGEN=$RUNNER_TEMP/testgen" >> "$GITHUB_ENV"
+          else
+            echo "MARSA_TEST_NO_TESTGEN=1" >> "$GITHUB_ENV"
+            echo "::warning::ffmpeg-testgen is not in the cache yet: the real video tests do not run (the FFmpeg tools workflow builds it)"
+          fi
       - name: Clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Build

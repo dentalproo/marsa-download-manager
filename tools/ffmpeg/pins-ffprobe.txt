@@ -9,10 +9,10 @@
 # pinned. Both Macs use the universal file; Windows on arm64 its own build.
 # Read by crates/marsa-core/src/tools.rs (built in, read strictly: see
 # parse_pins there; a test reads this file).
-version 8.1.3-1
-windows-x86_64 ffprobe-windows-x86_64.exe d38f473972db11e21b647a2614b75e3c19b612943fa8574589dcc4c306851a67
-windows-aarch64 ffprobe-windows-aarch64.exe 31a13e2b32204d5617a7aac35ce904b5bc3181a953f30f80c5ce52112adbb58c
-macos-x86_64 ffprobe-macos-universal 99b567808a4f753047c936eb7614d7a8087bfa1d152f55b970e8c42dba5866fb
-macos-aarch64 ffprobe-macos-universal 99b567808a4f753047c936eb7614d7a8087bfa1d152f55b970e8c42dba5866fb
-linux-x86_64 ffprobe-linux-x86_64 6645f10e441b2296eea25419a9fc114402d60e3a3de489b17b00c785d118efdc
-linux-aarch64 ffprobe-linux-aarch64 968ff1ff22981c4154ab852d17f85a5af051690a9e4a12a8907d35281d03d3a6
+version 8.1.3-3
+windows-x86_64 ffprobe-windows-x86_64.exe 9e2f61e61612467de890972e08b7a042eb630ed85a1eccbab16ceaa28d9713e0
+windows-aarch64 ffprobe-windows-aarch64.exe 8e1e7fed00d5ade9a8f4efc063708c3e7b9c431d24ae4320b555275144ecf023
+macos-x86_64 ffprobe-macos-universal e7553713f57d50885970b68afcfa0809d5232eb4f25f9c69c4283a864986bfee
+macos-aarch64 ffprobe-macos-universal e7553713f57d50885970b68afcfa0809d5232eb4f25f9c69c4283a864986bfee
+linux-x86_64 ffprobe-linux-x86_64 4fdec184a974eeddc5d6b18129cfc66313f1756b0505723e3b9692654de682df
+linux-aarch64 ffprobe-linux-aarch64 ab24b18b59de10abcaaafa0189a7eb383a3ed3388aa4c09a77153d0d5f6484d7
