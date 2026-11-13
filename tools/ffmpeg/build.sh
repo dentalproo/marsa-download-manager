@@ -21,6 +21,13 @@ here="$(cd "$(dirname "$0")" && pwd)"
 variant="${1:?dist or testgen}"
 tarball="${2:?source tarball}"
 out="${3:?out dir}"
+
+# Git Bash hands back Windows paths (D:\a\...), which tar reads as a remote
+# host and configure cannot cd into. cygpath is there only on Windows.
+if command -v cygpath >/dev/null 2>&1; then
+  tarball="$(cygpath -u "$tarball")"
+  out="$(cygpath -u "$out")"
+fi
 case "$variant" in
   dist) suffix="" ;;
   testgen) suffix="-testgen" ;;

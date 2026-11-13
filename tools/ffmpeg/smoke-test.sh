@@ -10,6 +10,9 @@
 #   tools/ffmpeg/smoke-test.sh <dist dir> <testgen dir>
 set -euo pipefail
 
+if command -v cygpath >/dev/null 2>&1; then
+  set -- "$(cygpath -u "${1:?dist dir}")" "$(cygpath -u "${2:?testgen dir}")"
+fi
 dist="$(cd "${1:?dist dir}" && pwd)"
 testgen="$(cd "${2:?testgen dir}" && pwd)"
 exe=""

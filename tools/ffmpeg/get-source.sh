@@ -14,6 +14,9 @@ here="$(cd "$(dirname "$0")" && pwd)"
 # shellcheck source=tools/ffmpeg/source.env
 . "$here/source.env"
 dir="${1:?dir}"
+# Git Bash hands back Windows paths (D:\a\...); cygpath is there only on
+# Windows. Everything after this reads POSIX paths.
+if command -v cygpath >/dev/null 2>&1; then dir="$(cygpath -u "$dir")"; fi
 mkdir -p "$dir"
 
 fetch() {

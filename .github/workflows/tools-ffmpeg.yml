@@ -57,39 +57,62 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      - name: Use a POSIX temporary path (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: echo "SRC_POSIX=$(cygpath -u "$RUNNER_TEMP")" >> "$GITHUB_ENV"
+      - name: Make sure make is there (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if command -v make >/dev/null 2>&1; then make --version | head -n 1; exit 0; fi
+          tmp="$(cygpath -u "$RUNNER_TEMP")"
+          if command -v mingw32-make >/dev/null 2>&1; then
+            mkdir -p "$tmp/bin"
+            cp "$(command -v mingw32-make)" "$tmp/bin/make.exe"
+            echo "$tmp/bin" >> "$GITHUB_PATH"
+            exit 0
+          fi
+          if [ -x /c/msys64/usr/bin/pacman.exe ]; then
+            /c/msys64/usr/bin/pacman.exe -S --noconfirm --needed make
+            echo "/c/msys64/usr/bin" >> "$GITHUB_PATH"
+            exit 0
+          fi
+          echo "::error::no make, and no way to install it"; exit 1
       - name: Install the compiler (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update -q && sudo apt-get install -y -q build-essential
       - name: Get the source
         shell: bash
-        run: bash tools/ffmpeg/get-source.sh "$RUNNER_TEMP/src"
+        run: bash tools/ffmpeg/get-source.sh "${SRC_POSIX:-$RUNNER_TEMP}/src"
       - name: Build the distributed binaries
         shell: bash
-        run: bash tools/ffmpeg/build.sh dist "$RUNNER_TEMP/src/$FFMPEG_TARBALL" "$RUNNER_TEMP/out"
+        run: bash tools/ffmpeg/build.sh dist "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/out"
       - name: Build the test binaries
         shell: bash
-        run: bash tools/ffmpeg/build.sh testgen "$RUNNER_TEMP/src/$FFMPEG_TARBALL" "$RUNNER_TEMP/testgen"
+        run: bash tools/ffmpeg/build.sh testgen "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/testgen"
       - name: Smoke test
         shell: bash
-        run: bash tools/ffmpeg/smoke-test.sh "$RUNNER_TEMP/out" "$RUNNER_TEMP/testgen"
+        run: bash tools/ffmpeg/smoke-test.sh "${SRC_POSIX:-$RUNNER_TEMP}/out" "${SRC_POSIX:-$RUNNER_TEMP}/testgen"
       - name: Check the linked libraries
         shell: bash
-        run: bash tools/ffmpeg/check-linked.sh "$RUNNER_TEMP/out"
+        run: bash tools/ffmpeg/check-linked.sh "${SRC_POSIX:-$RUNNER_TEMP}/out"
       - name: Build the macOS universal binaries
         if: matrix.system == 'macos-universal'
         shell: bash
         run: |
           set -euo pipefail
-          MARSA_FFMPEG_EXTRA="--arch=x64" bash tools/ffmpeg/build.sh dist "$RUNNER_TEMP/src/$FFMPEG_TARBALL" "$RUNNER_TEMP/out-x64"
-          MARSA_FFMPEG_EXTRA="--arch=arm64" bash tools/ffmpeg/build.sh dist "$RUNNER_TEMP/src/$FFMPEG_TARBALL" "$RUNNER_TEMP/out-arm64"
-          lipo -create "$RUNNER_TEMP/out-arm64/ffmpeg" "$RUNNER_TEMP/out-x64/ffmpeg" -output "$RUNNER_TEMP/out/ffmpeg"
-          lipo -create "$RUNNER_TEMP/out-arm64/ffprobe" "$RUNNER_TEMP/out-x64/ffprobe" -output "$RUNNER_TEMP/out/ffprobe"
-          chmod +x "$RUNNER_TEMP/out/ffmpeg" "$RUNNER_TEMP/out/ffprobe"
+          MARSA_FFMPEG_EXTRA="--arch=x64" bash tools/ffmpeg/build.sh dist "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/out-x64"
+          MARSA_FFMPEG_EXTRA="--arch=arm64" bash tools/ffmpeg/build.sh dist "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/out-arm64"
+          lipo -create "${SRC_POSIX:-$RUNNER_TEMP}/out-arm64/ffmpeg" "${SRC_POSIX:-$RUNNER_TEMP}/out-x64/ffmpeg" -output "${SRC_POSIX:-$RUNNER_TEMP}/out/ffmpeg"
+          lipo -create "${SRC_POSIX:-$RUNNER_TEMP}/out-arm64/ffprobe" "${SRC_POSIX:-$RUNNER_TEMP}/out-x64/ffprobe" -output "${SRC_POSIX:-$RUNNER_TEMP}/out/ffprobe"
+          chmod +x "${SRC_POSIX:-$RUNNER_TEMP}/out/ffmpeg" "${SRC_POSIX:-$RUNNER_TEMP}/out/ffprobe"
       - name: Name the build files
         shell: bash
         run: |
           set -euo pipefail
-          out="$RUNNER_TEMP/out"
+          out="${SRC_POSIX:-$RUNNER_TEMP}/out"
           case "${{ matrix.system }}" in
             windows-x86_64)
               mv "$out/ffmpeg.exe" "$out/ffmpeg-windows-x86_64.exe"

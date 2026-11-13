@@ -10,6 +10,7 @@
 set -euo pipefail
 
 dir="${1:?dir}"
+if command -v cygpath >/dev/null 2>&1; then dir="$(cygpath -u "$dir")"; fi
 fail() { echo "::error::$*" >&2; exit 1; }
 
 case "$(uname -s)" in
