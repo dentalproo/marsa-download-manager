@@ -233,6 +233,29 @@ jobs:
             "$src/$FFMPEG_TARBALL" \
             "$src/$FFMPEG_TARBALL.asc" \
             --clobber
+      - name: Pack the source with its build files
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          src="$RUNNER_TEMP/src"
+          pkg="$RUNNER_TEMP/pkg"
+          mkdir -p "$pkg"
+          tar -xJf "$src/$FFMPEG_TARBALL" -C "$pkg"
+          root="$pkg/ffmpeg-$FFMPEG_VERSION"
+          # ADR-0009, checklist item 6: how each binary was made, inside
+          # the source root, and the scripts and options that made it.
+          cp artifacts/ffmpeg-build-*.txt "$root/"
+          mkdir -p "$root/marsa-build"
+          cp tools/ffmpeg/build.sh \
+             tools/ffmpeg/configure-dist.txt \
+             tools/ffmpeg/source.env \
+             tools/ffmpeg/smoke-test.sh \
+             tools/ffmpeg/check-linked.sh \
+             "$root/marsa-build/"
+          tarball="$RUNNER_TEMP/ffmpeg-$FFMPEG_VERSION-marsa-source.tar.xz"
+          tar -cJf "$tarball" -C "$pkg" "ffmpeg-$FFMPEG_VERSION"
+          gh release upload "$RELEASE_TAG" "$tarball" --clobber
       - name: Upload the LGPL licence texts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -263,5 +286,6 @@ jobs:
             (cd "$src" && sha256sum "$FFMPEG_TARBALL" "$FFMPEG_TARBALL.asc")
             (cd artifacts && sha256sum ./*)
             (cd "$lic" && sha256sum ./*)
+            (cd "$RUNNER_TEMP" && sha256sum "ffmpeg-$FFMPEG_VERSION-marsa-source.tar.xz")
           } | sed 's# \./# #' > "$sums"
           gh release upload "$RELEASE_TAG" "$sums" --clobber
