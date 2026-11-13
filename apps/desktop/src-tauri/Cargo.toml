@@ -78,4 +78,4 @@ marsa-testserver = { path = "../../../crates/marsa-testserver" }
 # Whether the desktop shows tray icons (`closing.rs`): already in the tree
 # through tauri-plugin-notification, so no new crate.
 [target.'cfg(target_os = "linux")'.dependencies]
-zbus = "5.19.0"
+zbus = "6.2.1"
