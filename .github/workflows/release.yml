@@ -1,0 +1,131 @@
+name: Release
+
+# A signed Windows release (ADR-0011): built from a `vX.Y.Z` tag on `main`,
+# inside the `release` environment, which holds the private key and waits for
+# the owner's approval. The build script signs the installer and writes
+# `latest.json`; this workflow publishes both, and replaces the one
+# `latest.json` on the `updater` release — the address the app asks
+# (`marsa_core::update::MANIFEST`).
+#
+# The key is a secret, never an artifact: it is written to a temporary file
+# for the build and removed at once. Nothing here prints it.
+
+on:
+  push:
+    tags: ['v*.*.*']
+
+permissions:
+  contents: write
+
+# One release at a time, and never cancelled halfway through publishing.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  CARGO_TERM_COLOR: always
+
+# Every third-party action is pinned to a full commit SHA, with its release
+# tag in a comment (AGENTS.md). The Rust version comes from
+# rust-toolchain.toml.
+
+jobs:
+  windows:
+    name: Windows release
+    runs-on: windows-latest
+    timeout-minutes: 90
+    environment: release
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history: the tag must be on `main`, and `main` is
+          # checked below.
+          fetch-depth: 0
+      - name: The tag is a version of this build, on main
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag="$GITHUB_REF_NAME"
+          if ! printf '%s' "$tag" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::a release tag is vX.Y.Z, not $tag"; exit 1
+          fi
+          version="$(node -p "require('./apps/desktop/src-tauri/tauri.conf.json').version")"
+          if [ "v$version" != "$tag" ]; then
+            echo "::error::tauri.conf.json says $version, the tag says $tag"; exit 1
+          fi
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "::error::$tag is not on main"; exit 1
+          fi
+          echo "releasing Marsa $version from $GITHUB_SHA"
+      - name: Install pinned toolchain
+        run: rustup toolchain install && rustup show active-toolchain
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: |
+            . -> target
+            apps/desktop/src-tauri -> target
+            apps/installer/src-tauri -> target
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            apps/desktop/package-lock.json
+            apps/installer/package-lock.json
+      - name: Install npm packages (from the lock files only)
+        shell: bash
+        run: |
+          set -euo pipefail
+          (cd apps/desktop && npm ci)
+          (cd apps/installer && npm ci)
+      - name: Build, sign, and write the update manifest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if (-not $env:TAURI_SIGNING_PRIVATE_KEY) { throw 'the release environment has no TAURI_SIGNING_PRIVATE_KEY' }
+          $key = Join-Path $env:RUNNER_TEMP 'signing.key'
+          # No BOM, and no newline added: the file is the key, byte for byte.
+          [System.IO.File]::WriteAllText($key, $env:TAURI_SIGNING_PRIVATE_KEY, (New-Object System.Text.UTF8Encoding($false)))
+          try {
+            $env:MARSA_SIGNING_KEY = $key
+            if ($env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD) {
+              $env:MARSA_SIGNING_KEY_PASSWORD = $env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+            }
+            & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-windows.ps1
+            if ($LASTEXITCODE -ne 0) { throw "build-windows.ps1 failed: $LASTEXITCODE" }
+          } finally {
+            Remove-Item -LiteralPath $key -Force -ErrorAction SilentlyContinue
+          }
+          if (-not (Test-Path -LiteralPath 'dist\windows\latest.json')) { throw 'no latest.json: the installer was not signed' }
+      - name: Publish the release
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = $env:GITHUB_REF_NAME
+          $version = $tag.Substring(1)
+          $files = @(
+            (Join-Path 'dist\windows' "Marsa_{0}_x64-setup.exe" -f $version),
+            (Join-Path 'dist\windows' "Marsa_{0}_x64-setup.exe.sig" -f $version),
+            (Join-Path 'dist\windows' "Marsa_{0}_portable_x64.zip" -f $version),
+            (Join-Path 'dist\windows' 'SHA256SUMS'),
+            (Join-Path 'dist\windows' 'latest.json')
+          )
+          foreach ($f in $files) { if (-not (Test-Path -LiteralPath $f)) { throw "missing artifact: $f" } }
+          $extra = @('--verify-tag', '--generate-notes')
+          # Every 0.x release is a pre-release, as the update check assumes.
+          if ($version.StartsWith('0.')) { $extra += '--prerelease' }
+          & gh release create $tag --title "Marsa $version" @extra @files
+          if ($LASTEXITCODE -ne 0) { throw "gh release create failed: $LASTEXITCODE" }
+      - name: Point the update channel at this manifest
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & gh release view updater *> $null
+          if ($LASTEXITCODE -ne 0) {
+            & gh release create updater --prerelease --title 'Update channel' --notes "The signed update manifest, latest.json, for Marsa's updater (ADR-0011). Replaced at each release; nothing else is here."
+            if ($LASTEXITCODE -ne 0) { throw "gh release create updater failed: $LASTEXITCODE" }
+          }
+          & gh release upload updater 'dist\windows\latest.json' --clobber
+          if ($LASTEXITCODE -ne 0) { throw "gh release upload failed: $LASTEXITCODE" }

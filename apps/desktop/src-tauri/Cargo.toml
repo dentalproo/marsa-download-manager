@@ -1,0 +1,81 @@
+[package]
+name = "marsa-desktop"
+description = "Marsa Download Manager: the Windows desktop interface (Tauri 2)"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/dentalproo/marsa-download-manager"
+publish = false
+default-run = "marsa-desktop"
+
+# A workspace of its own: building the engine and the command line never
+# needs the GUI libraries (WebKitGTK on Linux). Every dependency is listed
+# in docs/DEPENDENCIES.md.
+[workspace]
+
+[lib]
+name = "marsa_desktop_lib"
+crate-type = ["rlib"]
+
+[[bin]]
+name = "marsa-desktop"
+path = "src/main.rs"
+
+[[bin]]
+name = "marsa-host"
+path = "src/bin/marsa-host.rs"
+
+[features]
+# Test pages and fixed demo data for the screenshots and the image test of
+# mixed names in CI. Never in a release build (checked in CI).
+ui-test = []
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.5", features = ["tray-icon", "image-png"] }
+tauri-plugin-autostart = "2.7.0"
+tauri-plugin-dialog = "2.8.3"
+tauri-plugin-notification = "2.7.0"
+tauri-plugin-opener = "2.7.0"
+# The schedule window's time of day (`schedule.rs`), as marsa-core's.
+jiff = "0.2.38"
+# Dragging a finished file out of «Download complete» (`complete.rs`).
+drag = "2.1.1"
+serde = { version = "1.0.229", features = ["derive"] }
+# The reports of the UI tests (`ui_test.rs`), and the tests.
+serde_json = "1.0.154"
+tokio = { version = "1.54.1", features = ["sync", "time", "rt-multi-thread", "macros", "signal"] }
+ts-rs = "12.0.1"
+marsa-core = { path = "../../../crates/marsa-core" }
+# The batch window's patterns (`batch.rs`), as `marsa batch`'s.
+marsa-grab = { path = "../../../crates/marsa-grab" }
+marsa-host = { path = "../../../crates/marsa-host" }
+marsa-i18n = { path = "../../../crates/marsa-i18n" }
+marsa-platform = { path = "../../../crates/marsa-platform" }
+tauri-plugin-single-instance = "2.5.4"
+# Torrent Health Analyzer (v1): analysis only, no peers yet.
+marsa-torrent = { path = "../../../crates/marsa-torrent" }
+# Torrent download engine (download-only by default, seeding off).
+librqbit = { version = "9.1.0", features = ["disable-upload"] }
+# Marsa's own signed update (ADR-0011, `update.rs`): Tauri's updater, after
+# the engine has checked the manifest and the signature with either of the
+# project's two keys.
+tauri-plugin-updater = "2.14.1"
+# Remote Download Control (v1): tiny sync HTTP on the LAN, opt-in only.
+tiny_http = "0.12.0"
+# Random token for the remote control (OS randoms, no seed).
+getrandom = "0.4.3"
+
+[dev-dependencies]
+# Tauri's mock runtime, for the test that the UI test commands are not in
+# a release build.
+tauri = { version = "2.12.5", features = ["test"] }
+tempfile = "3.27.0"
+marsa-testserver = { path = "../../../crates/marsa-testserver" }
+
+# Whether the desktop shows tray icons (`closing.rs`): already in the tree
+# through tauri-plugin-notification, so no new crate.
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus = "5.19.0"

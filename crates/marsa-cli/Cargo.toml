@@ -1,0 +1,24 @@
+[package]
+name = "marsa-cli"
+description = "The marsa command: download and resume from the command line"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "marsa"
+path = "src/main.rs"
+
+[dependencies]
+clap.workspace = true
+tokio.workspace = true
+marsa-core.workspace = true
+marsa-grab.workspace = true
+marsa-platform.workspace = true
+
+[dev-dependencies]
+jiff.workspace = true
+tempfile.workspace = true
+marsa-testserver.workspace = true

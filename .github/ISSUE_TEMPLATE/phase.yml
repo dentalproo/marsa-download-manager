@@ -1,0 +1,38 @@
+name: Phase
+description: Track a roadmap phase
+title: "chore: phase "
+labels: ["phase"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One issue per phase. Link the ROADMAP entry and the ADRs.
+  - type: input
+    id: phase
+    attributes:
+      label: Phase number
+      placeholder: "1"
+    validations:
+      required: true
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+    validations:
+      required: true
+  - type: textarea
+    id: success
+    attributes:
+      label: Success criteria
+    validations:
+      required: true
+  - type: textarea
+    id: tasks
+    attributes:
+      label: Tasks
+      description: Checklist of the work.
+  - type: input
+    id: adr
+    attributes:
+      label: Related ADRs
+      placeholder: "ADR-0001, ADR-0013"

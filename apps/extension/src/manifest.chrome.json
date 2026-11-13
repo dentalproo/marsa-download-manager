@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "version": "0.1.0",
+  "default_locale": "ar",
+  "minimum_chrome_version": "116",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA3+/jA+xsrWTFUzFw6xIG4w/gHAUTRp6r5RVl8ZA4QqGPu9KuJpBOIM7owDqKgIvW3lWDW5nduxwA9/7skJsrPrCp5Z9o03w2c/fpWKJsnkOfcjEdDJXTOuyUoTCPckAZofMYpmkozs70MFs+TJCh+v68fvghlwEuSy76derUKzF8i7oymMUXD/Ptlt44dBJmO/MuvFtJRPRR1xkLziqkT38saFS2AjuilItcXX37DLFzdEXqURfnxs9Uhc/fpN1MMIOhVk2ttlSt/oRP3MQ4V2yB3/KmiM2G+vsW8MSpYyUvu9ddWe4EJQdMlac6Qi6o7EjSi134V0qzY4v1vN8/WQIDAQAB",
+  "permissions": ["downloads", "downloads.ui", "contextMenus", "nativeMessaging", "storage", "notifications"],
+  "optional_permissions": ["cookies", "scripting", "webRequest"],
+  "optional_host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js", "type": "module" },
+  "action": { "default_title": "__MSG_extensionName__", "default_icon": { "32": "icons/32.png", "64": "icons/64.png" } },
+  "options_ui": { "page": "options.html", "open_in_tab": true },
+  "icons": { "32": "icons/32.png", "64": "icons/64.png", "128": "icons/128.png" }
+}

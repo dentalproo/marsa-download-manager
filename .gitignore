@@ -1,0 +1,36 @@
+# Rust build output
+/target/
+**/target/
+
+# JavaScript dependencies and build output
+node_modules/
+/apps/desktop/dist/
+/apps/installer/dist/
+/apps/desktop/src-tauri/gen/
+/apps/installer/src-tauri/gen/
+
+# Local release artefacts (built by scripts/build-windows.ps1)
+/dist/
+
+# macOS metadata (incl. AppleDouble files on external drives)
+._*
+.DS_Store
+
+# Editors / OS
+.idea/
+.vscode/
+Thumbs.db
+
+# Partial downloads and state files from local manual testing
+*.marsa-part
+*.marsa-state
+
+# Never commit third-party installers (clean-room rule)
+*.exe
+*.msi
+
+# Written by the CI release-feature check when run locally
+release-features.txt
+
+# The website build (site/build.mjs)
+/site/dist/

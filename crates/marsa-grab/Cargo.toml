@@ -1,0 +1,25 @@
+[package]
+name = "marsa-grab"
+description = "Marsa batch patterns and site grabber (UI-less library, M7)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish.workspace = true
+
+[dependencies]
+html5ever.workspace = true
+tokio.workspace = true
+marsa-core.workspace = true
+
+[features]
+# Lets tests treat a local origin as public (`Scope::treat_as_public`): two
+# test servers are both on 127.0.0.1. It turns on marsa-core's own, so the
+# CI check that keeps `test-support` out of release builds sees it too.
+test-support = ["marsa-core/test-support"]
+
+[dev-dependencies]
+jiff.workspace = true
+marsa-grab = { path = ".", features = ["test-support"] }
+marsa-testserver.workspace = true
+tempfile.workspace = true

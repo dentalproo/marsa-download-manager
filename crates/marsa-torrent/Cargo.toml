@@ -1,0 +1,11 @@
+[package]
+name = "marsa-torrent"
+description = "Torrent analysis core for Marsa (v1: bencode, .torrent, Magnet)"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/dentalproo/marsa-download-manager"
+publish = false
+
+[dependencies]
+thiserror = "2.0.21"

@@ -1,0 +1,423 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A newer push to a pull request cancels its older run; every run on main
+# has its own group, so none is cancelled or kept waiting.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+  # Tests never shut down or put the runner to sleep: they use a mock, and
+  # with this set the real PowerControl refuses anyway (checked by
+  # crates/marsa-cli/tests/power_guard.rs).
+  MARSA_NO_POWER_ACTIONS: "1"
+
+# Every third-party action is pinned to a full commit SHA, with its release
+# tag in a comment. Dependabot (.github/dependabot.yml) proposes updates.
+# The Rust version comes from rust-toolchain.toml.
+
+jobs:
+  pr-title:
+    name: PR title (Conventional Commits)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR title
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          if ! printf '%s' "$TITLE" | grep -Eq '^(feat|fix|docs|test|refactor|perf|build|ci|chore|style|revert)(\([a-z0-9._-]+\))?!?: .+'; then
+            echo "::error::PR title must follow Conventional Commits, e.g. 'feat: add resume support'"
+            exit 1
+          fi
+
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The whole history, for the private-key check below.
+          fetch-depth: 0
+      - name: Install pinned toolchain
+        run: rustup toolchain install && rustup show active-toolchain
+      - run: cargo fmt --all -- --check
+      - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --all -- --check
+      # The extension's private key never enters the repository: not in the
+      # files, not in the history. The check is shown to refuse each kind of
+      # test key first.
+      - name: No private key in the repository
+        run: |
+          bash scripts/test-check-no-private-keys.sh
+          bash scripts/check-no-private-keys.sh
+      # A change of the video tools raises their number: Marsa takes a signed
+      # tools list only when its number is higher.
+      - name: The tools' number follows their pins
+        if: github.event_name == 'pull_request'
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed=$(git diff --name-only "$BASE" HEAD -- 'tools/*/pins*.txt')
+          if [ -n "$changed" ] && git diff --quiet "$BASE" HEAD -- tools/sequence.txt; then
+            echo "::error::$changed changed: raise tools/sequence.txt too"; exit 1
+          fi
+      # The signed update checks TLS and the signature always: no
+      # `dangerous…` setting of Tauri's updater, in any build.
+      - name: No dangerous updater setting
+        run: |
+          if grep -rniE 'dangerous' apps/desktop/src-tauri/tauri*.json scripts/release/tauri.release.json apps/desktop/src-tauri/src/update.rs; then
+            echo "::error::a dangerous updater setting"; exit 1
+          fi
+
+  build-test:
+    name: Build & test (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install pinned toolchain
+        run: rustup toolchain install && rustup show active-toolchain
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      # USB drives use FAT32 or exFAT, where hard links and the no-replace
+      # rename are refused. Tests in marsa-platform and marsa-core run on a
+      # small image of each and fail on CI without them.
+      - name: Mount FAT32 and exFAT test volumes (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 10
+        env:
+          APT_OPTIONS: -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30
+        run: |
+          set -euo pipefail
+          sudo apt-get $APT_OPTIONS update -q
+          sudo apt-get $APT_OPTIONS install -y -q --no-install-recommends dosfstools exfatprogs exfat-fuse
+          truncate -s 256M "$RUNNER_TEMP/fat32.img" "$RUNNER_TEMP/exfat.img"
+          mkfs.vfat -F 32 -n MFAT32 "$RUNNER_TEMP/fat32.img"
+          mkfs.exfat -L MEXFAT "$RUNNER_TEMP/exfat.img"
+          sudo mkdir -p /mnt/mfat32 /mnt/mexfat
+          sudo mount -o loop,uid="$(id -u)",gid="$(id -g)" "$RUNNER_TEMP/fat32.img" /mnt/mfat32
+          if sudo modprobe exfat 2>/dev/null; then
+            sudo mount -o loop,uid="$(id -u)",gid="$(id -g)" "$RUNNER_TEMP/exfat.img" /mnt/mexfat
+          else
+            loop="$(sudo losetup --find --show "$RUNNER_TEMP/exfat.img")"
+            sudo mount.exfat-fuse -o uid="$(id -u)",gid="$(id -g)",allow_other "$loop" /mnt/mexfat
+          fi
+          findmnt /mnt/mfat32
+          findmnt /mnt/mexfat
+          test "$(findmnt -no FSTYPE /mnt/mfat32)" = vfat
+          case "$(findmnt -no FSTYPE /mnt/mexfat)" in exfat|fuseblk) ;; *) exit 1 ;; esac
+          touch /mnt/mexfat/probe && rm /mnt/mexfat/probe
+          echo "MARSA_TEST_FAT32=/mnt/mfat32" >> "$GITHUB_ENV"
+          echo "MARSA_TEST_EXFAT=/mnt/mexfat" >> "$GITHUB_ENV"
+      # The CLI tests run printed commands in sh, bash and zsh, and fail on
+      # CI if one is missing instead of skipping it.
+      - name: Install zsh (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 10
+        env:
+          APT_OPTIONS: -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30
+        run: |
+          set -euo pipefail
+          sudo apt-get $APT_OPTIONS install -y -q --no-install-recommends zsh
+          zsh -c 'echo "zsh $ZSH_VERSION"'
+      # Nothing is reserved when a download starts: tests in marsa-platform
+      # and marsa-core check, on a small image of each file system downloads
+      # land on, that a part file is sparse and that a disk filling up
+      # mid-download stops and resumes cleanly.
+      - name: Mount ext4 and btrfs test volumes (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 10
+        env:
+          APT_OPTIONS: -o Acquire::Retries=3 -o Acquire::http::Timeout=30 -o Acquire::https::Timeout=30
+        run: |
+          set -euo pipefail
+          sudo apt-get $APT_OPTIONS install -y -q --no-install-recommends btrfs-progs
+          truncate -s 64M "$RUNNER_TEMP/ext4.img"
+          truncate -s 256M "$RUNNER_TEMP/btrfs.img"
+          mkfs.ext4 -q -L MEXT4 "$RUNNER_TEMP/ext4.img"
+          mkfs.btrfs -q -L MBTRFS "$RUNNER_TEMP/btrfs.img"
+          sudo mkdir -p /mnt/mext4 /mnt/mbtrfs
+          sudo mount -o loop "$RUNNER_TEMP/ext4.img" /mnt/mext4
+          sudo mount -o loop "$RUNNER_TEMP/btrfs.img" /mnt/mbtrfs
+          sudo chown "$(id -u):$(id -g)" /mnt/mext4 /mnt/mbtrfs
+          test "$(findmnt -no FSTYPE /mnt/mext4)" = ext4
+          test "$(findmnt -no FSTYPE /mnt/mbtrfs)" = btrfs
+          echo "MARSA_TEST_EXT4=/mnt/mext4" >> "$GITHUB_ENV"
+          echo "MARSA_TEST_BTRFS=/mnt/mbtrfs" >> "$GITHUB_ENV"
+      - name: Mount FAT32 and exFAT test volumes (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          hdiutil create -quiet -size 256m -fs "MS-DOS FAT32" -volname MFAT32 "$RUNNER_TEMP/fat32.dmg"
+          hdiutil create -quiet -size 256m -fs ExFAT -volname MEXFAT "$RUNNER_TEMP/exfat.dmg"
+          hdiutil attach -quiet -nobrowse "$RUNNER_TEMP/fat32.dmg"
+          hdiutil attach -quiet -nobrowse "$RUNNER_TEMP/exfat.dmg"
+          mount | grep -q '/Volumes/MFAT32 (msdos'
+          mount | grep -q '/Volumes/MEXFAT (exfat'
+          echo "MARSA_TEST_FAT32=/Volumes/MFAT32" >> "$GITHUB_ENV"
+          echo "MARSA_TEST_EXFAT=/Volumes/MEXFAT" >> "$GITHUB_ENV"
+      - name: Mount an APFS test volume (macOS)
+        if: runner.os == 'macOS'
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          hdiutil create -quiet -size 64m -fs APFS -volname MAPFS "$RUNNER_TEMP/apfs.dmg"
+          hdiutil attach -quiet -nobrowse "$RUNNER_TEMP/apfs.dmg"
+          mount | grep -q '/Volumes/MAPFS (apfs'
+          echo "MARSA_TEST_APFS=/Volumes/MAPFS" >> "$GITHUB_ENV"
+      - name: Mount FAT32 and exFAT test volumes (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $fat = Join-Path $env:RUNNER_TEMP 'fat32.vhdx'
+          $exfat = Join-Path $env:RUNNER_TEMP 'exfat.vhdx'
+          $script = Join-Path $env:RUNNER_TEMP 'volumes.txt'
+          @(
+            "create vdisk file=`"$fat`" maximum=256 type=expandable"
+            "select vdisk file=`"$fat`""
+            'attach vdisk'
+            'convert mbr'
+            'create partition primary'
+            'format fs=fat32 quick label=MFAT32'
+            'assign letter=Y'
+            "create vdisk file=`"$exfat`" maximum=256 type=expandable"
+            "select vdisk file=`"$exfat`""
+            'attach vdisk'
+            'convert mbr'
+            'create partition primary'
+            'format fs=exfat quick label=MEXFAT'
+            'assign letter=Z'
+          ) | Set-Content -Encoding ascii $script
+          diskpart /s $script
+          if ($LASTEXITCODE -ne 0) { throw "diskpart failed: $LASTEXITCODE" }
+          if ((Get-Volume -DriveLetter Y).FileSystemType -ne 'FAT32') { throw 'Y: is not FAT32' }
+          if ((Get-Volume -DriveLetter Z).FileSystemType -ne 'exFAT') { throw 'Z: is not exFAT' }
+          'MARSA_TEST_FAT32=Y:\' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          'MARSA_TEST_EXFAT=Z:\' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: Mount an NTFS test volume (Windows)
+        if: runner.os == 'Windows'
+        timeout-minutes: 10
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ntfs = Join-Path $env:RUNNER_TEMP 'ntfs.vhdx'
+          $script = Join-Path $env:RUNNER_TEMP 'ntfs.txt'
+          @(
+            "create vdisk file=`"$ntfs`" maximum=64 type=expandable"
+            "select vdisk file=`"$ntfs`""
+            'attach vdisk'
+            'convert mbr'
+            'create partition primary'
+            'format fs=ntfs quick label=MNTFS'
+            'assign letter=X'
+          ) | Set-Content -Encoding ascii $script
+          diskpart /s $script
+          if ($LASTEXITCODE -ne 0) { throw "diskpart failed: $LASTEXITCODE" }
+          if ((Get-Volume -DriveLetter X).FileSystemType -ne 'NTFS') { throw 'X: is not NTFS' }
+          'MARSA_TEST_NTFS=X:\' | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      # The real tools for crates/marsa-jsbox/tests/jsbox.rs, each by its
+      # pin: QuickJS-NG and yt-dlp, from their own projects.
+      #
+      # The real video tests need Marsa's own ffmpeg build, which has no
+      # published release yet, so CI sets MARSA_TEST_VIDEO_SKIP and the
+      # workflow says so. Remove that once the first tools-ffmpeg release
+      # exists (ROADMAP, phase 3).
+      - name: Video tools for the tests
+        shell: bash
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          t="$RUNNER_TEMP/video-tools"
+          ytdlp="$(bash scripts/get-yt-dlp.sh "$t/yt-dlp")"
+          "$ytdlp" --version
+          qjs="$(bash scripts/get-qjs.sh "$t/quickjs")"
+          # qjs --help exits with 1 after printing its version.
+          { "$qjs" --help || true; } | head -n 1
+          {
+            echo "MARSA_TEST_YT_DLP=$ytdlp"
+            echo "MARSA_TEST_QJS=$qjs"
+            echo "MARSA_TEST_VIDEO_SKIP=1"
+          } >> "$GITHUB_ENV"
+          echo "::warning::the real video tests do not run: no tools-ffmpeg release yet"
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets --locked -- -D warnings
+      - name: Build
+        run: cargo build --workspace --all-targets --locked
+      - name: Test
+        env:
+          # The full disk on macOS: in the nightly workflow (disk_full.rs).
+          MARSA_DISK_FULL_NIGHTLY_ONLY: ${{ runner.os == 'macOS' && '1' || '' }}
+        run: cargo test --workspace --locked
+      # Release builds have no overflow checks, so arithmetic on untrusted
+      # input (HTTP dates, ranges, state files) is tested there too.
+      - name: Test engine in release mode
+        run: cargo test --release --locked -p marsa-core --lib --test resume --test state_file
+      # `test-support` lets tests trust their temporary CA. Only
+      # dev-dependencies may enable it; a release build must not contain it.
+      - name: Release build has no test-only features
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo build --release --locked --workspace --bins
+          cargo tree --locked --workspace -e normal,build,features -i marsa-core > release-features.txt
+          if ! grep -q '^marsa-core v' release-features.txt; then
+            echo "::error::cargo tree did not list marsa-core; the check cannot run"
+            exit 1
+          fi
+          if grep 'test-support' release-features.txt; then
+            echo "::error::a release build enables marsa-core/test-support"
+            exit 1
+          fi
+          echo "marsa-core/test-support is off in release builds"
+
+  desktop:
+    name: Desktop app (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows-first (ADR-0013). The engine builds and tests on Linux in
+        # `build-test`; the Linux desktop bundle arrives in phase 4.
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: apps/desktop
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install pinned toolchain
+        working-directory: .
+        run: rustup toolchain install && rustup show active-toolchain
+      - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
+        with:
+          workspaces: apps/desktop/src-tauri
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+      - name: Install npm packages (from the lock file only)
+        run: npm ci
+      - name: Licenses and advisories of npm packages
+        run: |
+          npm run licenses
+          npm audit --audit-level=high
+      - name: Svelte check (accessibility warnings are errors)
+        run: npm run check
+      - name: Unit tests of the interface
+        run: npm test
+      # A release build of the page has no test page and no test command.
+      - name: Release build has no UI test code
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          uitest=$(ls src/uitest | sed 's/\.[a-z]*$//' | sort -u | paste -sd'|' -)
+          extra=$(find dist -name '*.js' | grep -E "/($uitest)-[A-Za-z0-9_-]+\.js$" || true)
+          if [ -n "$extra" ]; then
+            echo "::error::the release build of the page has a chunk of the UI tests:"
+            echo "$extra"
+            exit 1
+          fi
+          if grep -rl -i 'data-marsa-ui-test\|ui_test_\|uitest\|windowRect\|naiveDiffers\|axe-core\|axe\.run' dist; then
+            echo "::error::the release build of the page contains UI test code"
+            exit 1
+          fi
+          if grep -n '^default *=' src-tauri/Cargo.toml | grep ui-test; then
+            echo "::error::ui-test is a default feature"
+            exit 1
+          fi
+          if ! grep -q '"capabilities": \["default"\]' src-tauri/tauri.conf.json; then
+            echo "::error::the release build must enable only the default capability"
+            exit 1
+          fi
+          echo "no UI test code in the release build"
+      - name: Clippy (desktop)
+        working-directory: apps/desktop/src-tauri
+        shell: bash
+        run: |
+          cargo clippy --locked --all-targets -- -D warnings
+          cargo clippy --locked --all-targets --features ui-test -- -D warnings
+      - name: Tests (desktop)
+        working-directory: apps/desktop/src-tauri
+        shell: bash
+        run: |
+          cargo test --locked
+          cargo test --locked --features ui-test --lib
+      - name: Build the app
+        shell: bash
+        run: npx tauri build --debug --no-bundle
+
+  extension:
+    name: Browser extension
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/extension
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/extension/package-lock.json
+      - name: Install npm packages (from the lock file only)
+        run: npm ci
+      # Build and lint tools only: nothing from npm goes into the extension.
+      - name: Licenses and advisories of npm packages
+        run: |
+          node ../desktop/scripts/check-licenses.mjs
+          npm audit --audit-level=high
+      - name: Types (checkJs)
+        run: npm run check
+      - name: Tests
+        run: npm test
+      - name: Build (Chrome and Edge, Firefox)
+        run: npm run build
+      # addons-linter is the linter `web-ext lint` runs, and AMO's.
+      - name: Lint the Firefox build
+        run: npm run lint
+      - name: Upload the built extension
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: marsa-extension
+          path: apps/extension/dist
+          if-no-files-found: error
+
+  licenses:
+    name: Licenses & advisories (cargo-deny)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check
+
+  desktop-licenses:
+    name: Desktop licenses & advisories (cargo-deny)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          manifest-path: apps/desktop/src-tauri/Cargo.toml
+          command: check
+          arguments: --all-features

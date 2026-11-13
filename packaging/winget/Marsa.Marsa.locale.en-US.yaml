@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: Marsa.Marsa
+PackageVersion: 0.1.0
+PackageLocale: en-US
+Publisher: Marsa
+PublisherUrl: https://marsa.app
+PublisherSupportUrl: https://github.com/dentalproo/marsa-download-manager/issues
+PackageName: Marsa
+PackageUrl: https://marsa.app
+License: GPL-3.0-or-later
+LicenseUrl: https://github.com/dentalproo/marsa-download-manager/blob/main/LICENSE
+Copyright: Copyright © 2026 Marsa contributors
+ShortDescription: A calm, fast, Arabic-first download manager for Windows.
+Description: Marsa downloads files in parallel, resumes them after a disconnect, keeps queues, categories and speed limits, and captures links from the browser. Arabic-first, right-to-left, free and open source.
+Moniker: marsa
+Tags:
+  - download-manager
+  - downloader
+  - arabic
+  - rtl
+  - open-source
+ReleaseNotesUrl: https://github.com/dentalproo/marsa-download-manager/releases/tag/v0.1.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

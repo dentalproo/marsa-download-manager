@@ -1,0 +1,111 @@
+/* Marsa Installer visual language: same tokens as the app. */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
+@import "@fontsource/ibm-plex-sans-arabic/400.css";
+@import "@fontsource/ibm-plex-sans-arabic/500.css";
+@import "@fontsource/ibm-plex-sans-arabic/600.css";
+@import "@fontsource/ibm-plex-sans-arabic/700.css";
+
+:root {
+  --bg: #080b12;
+  --surface: #0e131c;
+  --raised: #141b27;
+  --sunken: #0a0f17;
+  --side: #0b1018;
+  --ink: #e9eef8;
+  --muted: #95a1b6;
+  --faint: #6b778c;
+  --line: #1e2735;
+  --line-strong: #2b3749;
+  --accent: #3b82f6;
+  --accent-hover: #60a5fa;
+  --accent-press: #2563eb;
+  --accent-ink: #ffffff;
+  --accent-soft: #16243c;
+  --sel: #16233a;
+  --amber: #fbbf24;
+  --amber-fill: #f59e0b;
+  --amber-bg: #2e2408;
+  --red: #f87171;
+  --red-bg: #2e1517;
+  --green: #34d399;
+  --green-fill: #10b981;
+  --green-bg: #0b2b24;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --radius-xl: 22px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45), 0 32px 64px rgba(0, 0, 0, 0.4);
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f4f6fb;
+    --surface: #ffffff;
+    --raised: #ffffff;
+    --sunken: #eef2f8;
+    --side: #f8fafd;
+    --ink: #0e1726;
+    --muted: #5d6b82;
+    --faint: #8492a6;
+    --line: #e3e8f1;
+    --line-strong: #cfd7e5;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-press: #1e40af;
+    --accent-ink: #ffffff;
+    --accent-soft: #e8efff;
+    --sel: #eaf1ff;
+    --amber: #92600a;
+    --amber-fill: #b45309;
+    --amber-bg: #fff4d6;
+    --red: #c02626;
+    --red-bg: #ffe9e9;
+    --green: #0f7b53;
+    --green-fill: #059669;
+    --green-bg: #dff7ec;
+    --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
+    --shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.10), 0 32px 64px rgba(16, 24, 40, 0.12);
+    color-scheme: light;
+  }
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body, #app { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 13.5px/1.55 "Inter", "IBM Plex Sans Arabic", "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--radius-s); }
+::-webkit-scrollbar { width: 0; height: 0; }
+* { scrollbar-width: none; -ms-overflow-style: none; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 38px; border: 1px solid var(--line-strong); background: var(--raised);
+  padding: 9px 18px; border-radius: 11px; font-weight: 500; white-space: nowrap;
+  transition: background 140ms ease, border-color 140ms ease, transform 140ms ease;
+}
+.btn:hover:not(:disabled) { background: var(--sunken); border-color: var(--line-strong); }
+.btn:active:not(:disabled) { transform: translateY(1px); }
+.btn.primary {
+  background: var(--accent); color: var(--accent-ink); border-color: transparent;
+  font-weight: 600; box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 32%, transparent);
+}
+.btn.primary:hover:not(:disabled) { background: var(--accent-hover); }
+.btn.big { min-height: 46px; padding: 0 26px; font-size: 14.5px; border-radius: 12px; }
+.btn.ghost-text { border-color: transparent; background: none; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.input {
+  width: 100%; min-height: 44px; padding: 10px 14px;
+  background: var(--sunken); border: 1px solid var(--line-strong);
+  border-radius: var(--radius-m); color: var(--ink); font: inherit; font-size: 13.5px;
+}
+.input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); background: var(--surface); }

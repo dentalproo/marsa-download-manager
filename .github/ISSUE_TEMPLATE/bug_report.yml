@@ -1,0 +1,57 @@
+name: Bug report
+description: Report a problem in Marsa
+title: "fix: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Please fill in as much as you can.
+  - type: input
+    id: version
+    attributes:
+      label: Marsa version
+      description: From "About" or the installer filename.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - Windows 11
+        - Windows 10
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: The smallest set of steps that shows the problem.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: From `%APPDATA%\marsa\logs` (or the equivalent on your system). Remove any token or password first.
+      render: shell
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: I removed tokens, passwords and cookies from the logs.
+          required: true
+        - label: I searched existing issues.
+          required: true

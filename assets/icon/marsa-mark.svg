@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="230 190 564 700" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Marsa">
+  <title>Marsa</title>
+  <circle cx="512" cy="308" r="72" stroke-width="54"/>
+  <path d="M512 380V748" stroke-width="54"/>
+  <path d="M382 468H642" stroke-width="54"/>
+  <path d="M322 586C322 696 405 768 512 768C619 768 702 696 702 586" stroke-width="54"/>
+  <path d="M300 856C376 820 448 892 524 856C600 820 672 892 748 856" stroke-width="30"/>
+</svg>

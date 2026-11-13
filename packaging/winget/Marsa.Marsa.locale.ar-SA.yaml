@@ -1,0 +1,24 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+PackageIdentifier: Marsa.Marsa
+PackageVersion: 0.1.0
+PackageLocale: ar-SA
+Publisher: مَرْسَى
+PublisherUrl: https://marsa.app
+PublisherSupportUrl: https://github.com/dentalproo/marsa-download-manager/issues
+PackageName: مَرْسَى
+PackageUrl: https://marsa.app
+License: GPL-3.0-or-later
+LicenseUrl: https://github.com/dentalproo/marsa-download-manager/blob/main/LICENSE
+Copyright: Copyright © 2026 Marsa contributors
+ShortDescription: مدير تحميل عربي أولًا، هادئ وسريع، لويندوز.
+Description: ينزّل مَرْسَى الملفات على عدة اتصالات، ويستكملها بعد انقطاع الشبكة، ويحفظ القوائم والفئات وحدود السرعة، ويلتقط الروابط من المتصفح. عربي أولًا ومن اليمين إلى اليسار، مجاني ومفتوح المصدر.
+Moniker: marsa
+Tags:
+  - download-manager
+  - downloader
+  - arabic
+  - rtl
+  - open-source
+ReleaseNotesUrl: https://github.com/dentalproo/marsa-download-manager/releases/tag/v0.1.0
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

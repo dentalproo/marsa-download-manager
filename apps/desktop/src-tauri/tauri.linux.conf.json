@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Marsa",
+        "width": 1240,
+        "height": 800,
+        "minWidth": 980,
+        "minHeight": 640,
+        "center": true,
+        "decorations": false
+      }
+    ]
+  }
+}
