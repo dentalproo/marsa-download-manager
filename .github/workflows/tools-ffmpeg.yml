@@ -240,6 +240,7 @@ jobs:
             echo "::error::no build was published"; exit 1
           fi
           gh release create "$tag" \
+            --latest=false \
             --title "FFmpeg $FFMPEG_VERSION (Marsa's build)" \
             --notes "FFmpeg $FFMPEG_VERSION, built by Marsa from $FFMPEG_URL (SHA-256 $FFMPEG_SHA256). Marsa's own build: remux only, plus the native AAC encoder for audio-only m4a; no --enable-gpl, no --enable-nonfree, no external library (LGPL 2.1 or later). The macOS files are signed ad-hoc only (a code signature, not notarised by Apple); the Windows and Linux files are not signed. The source, its signature, the licence texts and SHA256SUMS are the other assets." \
             "${files[@]}"
