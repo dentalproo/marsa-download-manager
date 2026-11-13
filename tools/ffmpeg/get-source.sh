@@ -51,7 +51,12 @@ if ! grep -q '^\[GNUPG:\] GOODSIG ' <<< "$status" ||
 fi
 rm -f "$dir/ffmpeg-devel.asc"
 
-actual="$(sha256sum "$dir/$FFMPEG_TARBALL" | cut -d' ' -f1)"
+# coreutils prefixes the line with a backslash when the file name holds one,
+# as it does when the runner passes a Windows path (D:\a\...). Take the hash
+# itself, whether or not that prefix is there.
+line="$(sha256sum "$dir/$FFMPEG_TARBALL")"
+line="${line#\\}"
+actual="${line%% *}"
 echo "$FFMPEG_TARBALL: signature good (key $FFMPEG_SIGNING_KEY), SHA-256 $actual"
 if [ -z "$FFMPEG_SHA256" ]; then
   echo "::error::FFMPEG_SHA256 is not pinned yet. The signed tarball's SHA-256 is $actual" >&2

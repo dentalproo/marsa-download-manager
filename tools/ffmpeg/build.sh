@@ -28,8 +28,13 @@ case "$variant" in
 esac
 
 sha256() {
-  if command -v sha256sum >/dev/null 2>&1; then sha256sum "$1" | cut -d' ' -f1
-  else shasum -a 256 "$1" | cut -d' ' -f1; fi
+  local line
+  if command -v sha256sum >/dev/null 2>&1; then line="$(sha256sum "$1")"
+  else line="$(shasum -a 256 "$1")"; fi
+  # coreutils prefixes the line with a backslash when the file name holds
+  # one, as it does when the runner passes a Windows path (D:\a\...).
+  line="${line#\\}"
+  printf '%s\n' "${line%% *}"
 }
 
 actual="$(sha256 "$tarball")"
