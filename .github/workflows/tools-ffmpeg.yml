@@ -57,6 +57,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      # The test-only build (ADR-0009, section 8.1): made here, kept in the
+      # cache for the CI's real video tests, and never put in the release.
+      - name: Restore the test-only FFmpeg build
+        id: testgen-cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/testgen
+          key: ffmpeg-testgen-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/ffmpeg/source.env', 'tools/ffmpeg/build.sh', 'tools/ffmpeg/configure-testgen.txt') }}
       - name: Use a POSIX temporary path (Windows)
         if: runner.os == 'Windows'
         shell: bash
@@ -98,16 +106,34 @@ jobs:
       - name: Check the linked libraries
         shell: bash
         run: bash tools/ffmpeg/check-linked.sh "${SRC_POSIX:-$RUNNER_TEMP}/out"
+      - name: Keep the test-only FFmpeg build for the CI
+        if: steps.testgen-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}/testgen
+          key: ffmpeg-testgen-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('tools/ffmpeg/source.env', 'tools/ffmpeg/build.sh', 'tools/ffmpeg/configure-testgen.txt') }}
       - name: Build the macOS universal binaries
         if: matrix.system == 'macos-universal'
         shell: bash
         run: |
           set -euo pipefail
-          MARSA_FFMPEG_EXTRA="--arch=x64" bash tools/ffmpeg/build.sh dist "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/out-x64"
-          MARSA_FFMPEG_EXTRA="--arch=arm64" bash tools/ffmpeg/build.sh dist "${SRC_POSIX:-$RUNNER_TEMP}/src/$FFMPEG_TARBALL" "${SRC_POSIX:-$RUNNER_TEMP}/out-arm64"
-          lipo -create "${SRC_POSIX:-$RUNNER_TEMP}/out-arm64/ffmpeg" "${SRC_POSIX:-$RUNNER_TEMP}/out-x64/ffmpeg" -output "${SRC_POSIX:-$RUNNER_TEMP}/out/ffmpeg"
-          lipo -create "${SRC_POSIX:-$RUNNER_TEMP}/out-arm64/ffprobe" "${SRC_POSIX:-$RUNNER_TEMP}/out-x64/ffprobe" -output "${SRC_POSIX:-$RUNNER_TEMP}/out/ffprobe"
-          chmod +x "${SRC_POSIX:-$RUNNER_TEMP}/out/ffmpeg" "${SRC_POSIX:-$RUNNER_TEMP}/out/ffprobe"
+          tmp="${SRC_POSIX:-$RUNNER_TEMP}"
+          # `out` holds the host build (arm64 on macos-latest); only the x86_64
+          # half is built here. `--arch` alone changes FFmpeg's own choice of
+          # code paths, not the compiler's target, so clang is given the slice
+          # too; FFmpeg's name for the architecture is x86_64, not x64.
+          extra="$(printf '%s\n' \
+            '--arch=x86_64' \
+            '--target-os=darwin' \
+            '--enable-cross-compile' \
+            '--extra-cflags=-arch x86_64' \
+            '--extra-ldflags=-arch x86_64')"
+          MARSA_FFMPEG_EXTRA="$extra" bash tools/ffmpeg/build.sh dist "$tmp/src/$FFMPEG_TARBALL" "$tmp/out-x64"
+          lipo -create "$tmp/out/ffmpeg" "$tmp/out-x64/ffmpeg" -output "$tmp/out/ffmpeg.universal"
+          lipo -create "$tmp/out/ffprobe" "$tmp/out-x64/ffprobe" -output "$tmp/out/ffprobe.universal"
+          mv "$tmp/out/ffmpeg.universal" "$tmp/out/ffmpeg"
+          mv "$tmp/out/ffprobe.universal" "$tmp/out/ffprobe"
+          chmod +x "$tmp/out/ffmpeg" "$tmp/out/ffprobe"
       - name: Name the build files
         shell: bash
         run: |
