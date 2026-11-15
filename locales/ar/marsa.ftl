@@ -104,6 +104,30 @@ nav-queues = الطوابير
 nav-settings = الإعدادات
 queue-window = من { $start } إلى { $stop }
 
+## لوحة التحكم (تصميم نوفا)
+
+nav-dashboard = لوحة التحكم
+dash-tagline = ملفك يرسو سالمًا
+dash-live = نشط الآن
+dash-sub = نظرة سريعة على ما يصل، وسرعته، وآخر التنزيلات.
+dash-now-title = التحميل الجاري
+dash-downloading = جارٍ التنزيل…
+dash-idle = لا شيء يعمل الآن
+dash-idle-hint = أضف رابطًا ليبدأ التحميل.
+dash-eta = الوقت المتبقي { $time }
+dash-finished-size = المكتمل
+dash-total-size = الإجمالي
+dash-connections = الاتصالات
+dash-speed-title = تحليلات السرعة
+dash-history = آخر دقيقة
+dash-speed-now = السرعة الآن
+dash-minute = آخر دقيقة
+dash-peak = الذروة { $speed }
+dash-no-traffic = لا حركة بعد
+dash-list-title = قائمة التنزيل
+dash-see-all = عرض الكل
+dash-empty = لا توجد تنزيلات بعد. أضف رابطًا أو انتظر رابطًا من المتصفح.
+
 ## الفئات المدمجة (المفتاح category-<id>)
 
 category-programs = برامج
@@ -897,6 +921,7 @@ settings-section-proxy = البروكسي
 settings-section-logins = تسجيل الدخول للمواقع
 settings-section-sounds = الأصوات
 settings-section-speed = محدد السرعة
+settings-section-remote = التحكم عن بعد
 settings-section-appearance = المظهر
 settings-double-click = النقر المزدوج على تحميل مكتمل
 settings-double-click-open = يفتح الملف

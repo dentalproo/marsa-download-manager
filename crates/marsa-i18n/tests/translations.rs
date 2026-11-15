@@ -863,6 +863,9 @@ const REVIEWED_VARIABLES: &[(&str, &[&str])] = &[
     ("footer-limit", &["speed"]),
     ("footer-total-speed", &["speed"]),
     ("footer-waiting", &["count"]),
+    // The dashboard: a time and a speed, both formatted beforehand.
+    ("dash-eta", &["time"]),
+    ("dash-peak", &["speed"]),
     ("hours-left", &["count"]),
     ("minutes-left", &["count"]),
     ("notify-done-body", &["name"]),
@@ -1501,6 +1504,16 @@ const WHOLE_TEXTS: &[Whole] = &[
         key: "speed-per-second",
         ar: (&[("size", "SIZE")], "SIZE/ث"),
         en: (&[("size", "SIZE")], "SIZE/s"),
+    },
+    Whole {
+        key: "dash-eta",
+        ar: (&[("time", "11")], "الوقت المتبقي 11"),
+        en: (&[("time", "1")], "1 left"),
+    },
+    Whole {
+        key: "dash-peak",
+        ar: (&[("speed", "SPEED")], "الذروة SPEED"),
+        en: (&[("speed", "SPEED")], "Peak SPEED"),
     },
     Whole {
         key: "status-scheduled",

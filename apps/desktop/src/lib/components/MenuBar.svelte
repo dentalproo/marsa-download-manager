@@ -143,8 +143,8 @@
     gap: 1px;
     padding: 2px 14px;
     font-size: 12.5px;
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
+    border-bottom: 0;
+    background: transparent;
     position: relative;
     z-index: 20;
   }

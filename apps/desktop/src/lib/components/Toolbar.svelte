@@ -253,10 +253,10 @@
     display: flex;
     align-items: center;
     gap: 3px;
-    min-height: 60px;
-    padding: 10px 18px;
-    border-bottom: 1px solid var(--line);
-    background: var(--surface);
+    min-height: 54px;
+    padding: 6px 18px 10px;
+    border-bottom: 0;
+    background: transparent;
     flex-wrap: wrap;
     row-gap: 6px;
   }

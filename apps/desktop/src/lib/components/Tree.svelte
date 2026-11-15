@@ -12,7 +12,7 @@
     | { kind: "collection"; id: string }
     | { kind: "status"; status: Section; category?: string | null };
 
-  export type View = "list" | "settings" | "categories" | "health" | "automation" | "plugins" | "torrents";
+  export type View = "dashboard" | "list" | "settings" | "categories" | "health" | "automation" | "plugins" | "torrents";
 
   /** A category's icon (Lucide), by its built-in id. */
   export function categoryIcon(id: string | null): string {
@@ -22,6 +22,8 @@
 
 <script lang="ts">
   import ColorIcon, { typeIcon } from "./ColorIcon.svelte";
+  import Icon from "./Icon.svelte";
+  import Mark from "./Mark.svelte";
   import { inSection } from "../sections";
   import { locale } from "../i18n.svelte";
   import { categoryName as nameOf } from "../categoryName";
@@ -110,10 +112,21 @@
   ] as const;
 </script>
 
-<nav class="tree" aria-label={locale.t("tree-label")}>
-  <button class="node top" aria-current={current({ kind: "all" })} onclick={() => show({ kind: "all" })}>
-    <ColorIcon name="all" size={18} /><span class="label">{locale.t("nav-all")}</span><span class="n num">{count(() => true)}</span>
-  </button>
+<aside class="side">
+  <div class="brand" dir={locale.dir}>
+    <span class="logo" aria-hidden="true"><Mark size={30} /></span>
+    <span class="wordmark">
+      <strong>{locale.t("app-name")}</strong>
+      <small>{locale.t("dash-tagline")}</small>
+    </span>
+  </div>
+  <nav class="tree" aria-label={locale.t("tree-label")}>
+    <button class="node dash-node" aria-current={view === "dashboard" ? "page" : undefined} onclick={() => (view = "dashboard")}>
+      <Icon mono name="layout" size={18} /><span class="label">{locale.t("nav-dashboard")}</span>
+    </button>
+    <button class="node top" aria-current={current({ kind: "all" })} onclick={() => show({ kind: "all" })}>
+      <ColorIcon name="all" size={18} /><span class="label">{locale.t("nav-all")}</span><span class="n num">{count(() => true)}</span>
+    </button>
 
   <!-- Under «All downloads»: the unfinished, finished and waiting ones,
        each with its categories inside (as IDM's). -->
@@ -244,17 +257,72 @@
     </button>
   {/if}
 </nav>
+</aside>
 
 <style>
+  .side {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+    background:
+      radial-gradient(420px 200px at 80% -6%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
+      linear-gradient(180deg, color-mix(in srgb, var(--accent) 6%, var(--side)), var(--side) 34%);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  /* The wordmark: one anchor, one calm line, and the sea's own light. */
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 18px 16px 14px;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 80%, transparent);
+    flex: none;
+  }
+  .logo {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 15px;
+    background: var(--hero-soft), var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+    box-shadow: 0 8px 26px color-mix(in srgb, var(--accent) 22%, transparent);
+    flex: none;
+  }
+  .wordmark {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .wordmark strong {
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+  .wordmark small {
+    color: var(--faint);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
   .tree {
-    background: var(--side);
-    border-inline-end: 1px solid var(--line);
-    padding: 14px 12px 18px;
+    padding: 10px 10px 18px;
     overflow: auto;
     font-size: 13.5px;
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-height: 0;
+  }
+  .dash-node {
+    font-weight: 600;
+    margin-bottom: 4px;
   }
   .newq {
     display: flex;
@@ -345,10 +413,10 @@
     background: var(--sel);
   }
   .node[aria-current="page"] {
-    background: var(--accent);
+    background: linear-gradient(90deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 68%, var(--accent-3)) 100%);
     color: var(--accent-ink);
     font-weight: 600;
-    box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 30%, transparent);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 34%, transparent);
   }
   .node[aria-current="page"] .n {
     color: color-mix(in srgb, var(--accent-ink) 80%, transparent);

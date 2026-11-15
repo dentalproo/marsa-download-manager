@@ -21,6 +21,7 @@
   import Automation, { type Rule } from "./lib/components/Automation.svelte";
   import Plugins, { type Plugin } from "./lib/components/Plugins.svelte";
   import Torrents from "./lib/components/Torrents.svelte";
+  import Dashboard from "./lib/components/Dashboard.svelte";
   import DownloadTable from "./lib/components/DownloadTable.svelte";
 import Mark from "./lib/components/Mark.svelte";
   import AddDialog from "./lib/components/AddDialog.svelte";
@@ -90,7 +91,7 @@ import { patchRows } from "./lib/progressRows";
   let error = $state<string | null>(null);
   // What the last toolbar command answered, if it failed.
   let failed = $state<string | null>(null);
-  let view = $state<View>("list");
+  let view = $state<View>("dashboard");
   let settings = $state<SettingsView | null>(null);
   let settingsMessage = $state<{ text: string; problem: boolean } | null>(null);
   // Why the settings could not be read (a damaged settings.json or
@@ -1164,6 +1165,19 @@ import { patchRows } from "./lib/progressRows";
         <Plugins bind:plugins />
       {:else if view === "torrents"}
         <Torrents />
+      {:else if view === "dashboard"}
+        <Dashboard
+          {snapshot}
+          shown={shown}
+          welcome={welcome}
+          onadd={() => doAction("add")}
+          onopen={(id) => {
+            view = "list";
+            void openOne(id);
+          }}
+          onshowall={() => (view = "list")}
+          ondismiss={dismissWelcome}
+        />
       {:else if details}
         {#if failed}<p class="problem" role="alert"><Icon name="alert" />{failed}</p>{/if}
         <Details
@@ -1285,14 +1299,15 @@ import { patchRows } from "./lib/progressRows";
     display: flex;
     flex-direction: column;
     height: 100%;
-    background: var(--bg);
+    background: transparent;
   }
   .body {
     flex: 1;
     display: grid;
-    grid-template-columns: 268px 1fr;
+    grid-template-columns: 276px minmax(0, 1fr);
+    gap: 12px;
     min-height: 0;
-    background: var(--bg);
+    padding: 0 12px 10px;
   }
   .main {
     position: relative;
@@ -1301,6 +1316,10 @@ import { patchRows } from "./lib/progressRows";
     min-width: 0;
     min-height: 0;
     background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow);
+    overflow: hidden;
   }
   /* Nothing to list: a calm invitation, not a blank screen. */
   .empty {
@@ -1385,22 +1404,27 @@ import { patchRows } from "./lib/progressRows";
     background: var(--red-bg);
     color: var(--red);
   }
-  /* A quiet status bar: small facts, separated by hairlines. */
+  /* A quiet status bar: small facts, one floating rail under the cards. */
   .status {
     display: flex;
     align-items: center;
-    height: 34px;
-    padding: 0 10px;
-    border-top: 1px solid var(--line);
+    height: 38px;
+    margin: 0 12px 10px;
+    padding: 0 8px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
     font-size: 12px;
     color: var(--muted);
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
+    flex: none;
+    overflow: hidden;
   }
   .status > span {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 0 14px;
+    padding: 0 13px;
+    white-space: nowrap;
   }
   .status > span + span {
     border-inline-start: 1px solid var(--line);

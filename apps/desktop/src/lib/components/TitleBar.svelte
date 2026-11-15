@@ -70,10 +70,10 @@
   .titlebar {
     display: flex;
     align-items: center;
-    height: 46px;
+    height: 44px;
     padding: 0 8px 0 16px;
-    background: var(--surface);
-    border-bottom: 1px solid var(--line);
+    background: transparent;
+    border-bottom: 0;
     user-select: none;
     -webkit-user-select: none;
     flex: none;

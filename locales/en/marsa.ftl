@@ -74,6 +74,30 @@ nav-queues = Queues
 nav-settings = Settings
 queue-window = from { $start } to { $stop }
 
+## Dashboard (the Nova design)
+
+nav-dashboard = Dashboard
+dash-tagline = Your file docks safely
+dash-live = Live now
+dash-sub = A calm look at what is arriving, how fast, and what just landed.
+dash-now-title = Current download
+dash-downloading = Downloading…
+dash-idle = Nothing is running now
+dash-idle-hint = Add a link to start a download.
+dash-eta = { $time } left
+dash-finished-size = Finished
+dash-total-size = Total
+dash-connections = Connections
+dash-speed-title = Speed analytics
+dash-history = Last minute
+dash-speed-now = Speed now
+dash-minute = Last minute
+dash-peak = Peak { $speed }
+dash-no-traffic = No traffic yet
+dash-list-title = Download list
+dash-see-all = See all
+dash-empty = No downloads yet. Add a link, or wait for one from the browser.
+
 ## Built-in categories (key category-<id>)
 
 category-programs = Programs
@@ -823,6 +847,7 @@ settings-section-proxy = Proxy
 settings-section-logins = Site logins
 settings-section-sounds = Sounds
 settings-section-speed = Speed limiter
+settings-section-remote = Remote control
 settings-section-appearance = Appearance
 settings-double-click = Double-clicking a finished download
 settings-double-click-open = Opens the file
