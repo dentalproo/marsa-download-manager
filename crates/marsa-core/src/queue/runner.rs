@@ -905,6 +905,18 @@ impl Runner {
                 return Ok(());
             }
         }
+        // The SHA-256 of the finished file, for the completion window: it is
+        // computed before the item is saved, so the window that opens with
+        // the finished event finds it. A file that cannot be read leaves it
+        // `None`; the download itself still stands. A private window's
+        // download leaves the queues, so its hash is not needed.
+        let sha256 = match &result {
+            Ok(done) if !private => {
+                let path = done.file.clone();
+                blocking(move || Ok(file_sha256(&path))).await?
+            }
+            _ => None,
+        };
         let tries = ignore_removed_with(
             self.update(move |queues| {
                 // Its queue's tries for each download (#142).
@@ -929,6 +941,7 @@ impl Runner {
                         item.state_file = None;
                         item.error = None;
                         item.failed_tries = 0;
+                        item.file_sha256 = sha256;
                         // Where it came from is no longer needed.
                         item.browser = None;
                     }
@@ -1062,6 +1075,28 @@ fn ignore_removed(result: Result<(), StoreError>) -> Result<(), StoreError> {
         Err(StoreError::NoSuchItem(_)) => Ok(()),
         other => other,
     }
+}
+
+/// The SHA-256 of a finished file, lower-case hex, or `None` if it cannot be
+/// read (the bytes are still the user's; the hash is only a detail).
+fn file_sha256(path: &std::path::Path) -> Option<String> {
+    use sha2::{Digest, Sha256};
+    use std::io::Read;
+
+    // Opened as a regular file and checked on the handle, never through a
+    // link planted in the user's folder (AGENTS.md §10.1).
+    let mut file = marsa_platform::fs::open_regular_nofollow(path, false).ok()?;
+    let mut hasher = Sha256::new();
+    let mut buffer = vec![0u8; 64 * 1024];
+    loop {
+        let read = file.read(&mut buffer).ok()?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..read]);
+    }
+    let digest = hasher.finalize();
+    Some(digest.iter().map(|b| format!("{b:02x}")).collect())
 }
 
 /// Runs file work (the queues file and its lock) off the async threads.

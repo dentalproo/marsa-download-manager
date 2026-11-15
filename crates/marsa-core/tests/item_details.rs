@@ -85,6 +85,24 @@ async fn a_download_is_saved_under_the_name_the_user_gave_it() {
     assert!(dir.path().join("server.zip").is_file());
 }
 
+/// The finished file's SHA-256 is recorded for the completion window: it was
+/// read there but never written before.
+#[tokio::test]
+async fn a_finished_file_s_sha256_is_recorded() {
+    let data = random_bytes(150_000, 952);
+    let server = server_naming("/get", "hash.bin", &data);
+    let data_dir = tempfile::tempdir().unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let store = QueueStore::new(data_dir.path());
+    let id = add(&store, &server.url("/get"), dir.path());
+
+    let summary = runner(&store).run(&Stop::new(), &mut |_| {}).await.unwrap();
+    assert_eq!(summary.finished, 1, "{summary:?}");
+    let item = store.load().unwrap().item(id).unwrap().clone();
+    let expected = sha256_hex(&data);
+    assert_eq!(item.file_sha256.as_deref(), Some(expected.as_str()));
+}
+
 /// AGENTS.md §10.7: a long name of multi-byte characters, taken already,
 /// is numbered within the limit, and the file it gets is downloaded.
 #[tokio::test]

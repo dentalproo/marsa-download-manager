@@ -248,10 +248,13 @@ mod tests {
 
     #[test]
     fn the_window_shows_the_file_and_a_link_without_its_token() {
-        let item = done("https://files.test/get/report.pdf?sig=SECRET#part");
+        let mut item = done("https://files.test/get/report.pdf?sig=SECRET#part");
+        let digest: String = "ab".repeat(32);
+        item.file_sha256 = Some(digest.clone());
         let shown = view(&item, Some(42)).unwrap();
         assert_eq!(shown.name, "report.pdf");
         assert_eq!(shown.size, Some(42));
+        assert_eq!(shown.sha256.as_deref(), Some(digest.as_str()));
         let file = item.file.as_deref().unwrap();
         assert_eq!(shown.folder, file.parent().unwrap().to_string_lossy());
         assert_eq!(shown.url, "https://files.test/get/report.pdf");
