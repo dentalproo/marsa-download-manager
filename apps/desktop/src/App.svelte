@@ -866,6 +866,9 @@ import { patchRows } from "./lib/progressRows";
     locale.set(lang as Lang);
     setTheme(theme);
     snapshot = await api.snapshot();
+    // A scene shows the list unless it asks for the dashboard, whatever the
+    // app opens on (the screenshots are taken for the list's design).
+    view = screen === "dashboard" ? "dashboard" : "list";
     // Two rows selected, as in the design.
     selected = [1, 2];
     if (screen === "settings" || screen === "switch") {
