@@ -396,6 +396,14 @@
       radial-gradient(540px 380px at 50% 42%, color-mix(in srgb, var(--accent) 26%, transparent), transparent 68%),
       var(--surface);
     border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    animation: hero-pulse 4.6s ease-in-out infinite;
+  }
+  @keyframes hero-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); }
+    50% { box-shadow: 0 0 40px 0 color-mix(in srgb, var(--accent) 18%, transparent); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero { animation: none; }
   }
   .hero::before {
     content: "";
