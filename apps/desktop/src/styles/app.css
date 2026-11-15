@@ -18,13 +18,13 @@
   /* «مرسى» — a harbour at night, the owner's Nova-inspired design
      (2026-11-14). Deep space navy, violet action, a cyan-to-pink glow
      only where something is moving. Calm surfaces carry the content. */
-  --bg: #05050e;
-  --surface: #0a0a18;
-  --raised: #101026;
-  --sunken: #070712;
-  --side: #080814;
-  --toolbar-end: #0a0a18;
-  --frame: #05050e;
+  --bg: #080B20;
+  --surface: #11142D;
+  --raised: #191A3A;
+  --sunken: #0a0d22;
+  --side: #0a0d22;
+  --toolbar-end: #11142D;
+  --frame: #080B20;
 
   /* Ink */
   --ink: #f0f1ff;
@@ -34,16 +34,15 @@
   --line-strong: #2c2c52;
 
   /* Brand and action (violet) */
-  --accent: #7c5cff;
-  --accent-hover: #9b82ff;
-  --accent-press: #6847e6;
-  --accent-ink: #ffffff;
-  --accent-soft: #1b1740;
-  /* The moving parts: cyan now, pink at the end of a bar. */
-  --accent-2: #34d3ff;
-  --accent-3: #ff5bd6;
-  --glow: rgba(124, 92, 255, 0.45);
-  --glow-2: rgba(52, 211, 255, 0.36);
+  --accent: #38D9FF;
+  --accent-hover: #5ce3ff;
+  --accent-press: #2bb8e0;
+  --accent-ink: #080B20;
+  --accent-soft: #1a2a4a;
+  --accent-2: #A34DFF;
+  --accent-3: #E34CDB;
+  --glow: rgba(56, 217, 255, 0.45);
+  --glow-2: rgba(163, 77, 255, 0.36);
 
   /* Selection and states */
   --sel: #171632;
@@ -53,8 +52,8 @@
   --amber-bg: #2b1e06;
   --red: #ff7b8c;
   --red-bg: #2b1018;
-  --green: #3ee6b0;
-  --green-fill: #10b981;
+  --green: #39D98A;
+  --green-fill: #39D98A;
   --green-bg: #06251f;
 
   /* Shape and depth */
@@ -66,10 +65,10 @@
   --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.5), 0 36px 80px rgba(0, 0, 0, 0.45);
   --scrim: rgba(3, 3, 12, 0.72);
   /* The window's own light: a violet dawn and a cyan harbour. */
-  --glow-1: rgba(124, 92, 255, 0.22);
-  --glow-2: rgba(52, 211, 255, 0.13);
-  --hero: linear-gradient(135deg, #6d5cff 0%, #b44dff 52%, #ff5bd6 100%);
-  --hero-soft: linear-gradient(135deg, rgba(124, 92, 255, 0.22), rgba(255, 91, 214, 0.1));
+  --glow-1: rgba(56, 217, 255, 0.22);
+  --glow-2: rgba(163, 77, 255, 0.13);
+  --hero: linear-gradient(135deg, #38D9FF 0%, #A34DFF 52%, #E34CDB 100%);
+  --hero-soft: linear-gradient(135deg, rgba(56, 217, 255, 0.22), rgba(227, 76, 219, 0.1));
   color-scheme: dark;
 }
 
@@ -109,10 +108,10 @@
     --shadow: 0 1px 2px rgba(16, 24, 40, 0.06), 0 8px 24px rgba(16, 24, 40, 0.06);
     --shadow-lg: 0 8px 24px rgba(16, 24, 40, 0.10), 0 32px 64px rgba(16, 24, 40, 0.12);
     --scrim: rgba(15, 23, 42, 0.35);
-    --glow-1: rgba(103, 70, 232, 0.10);
-    --glow-2: rgba(14, 116, 144, 0.08);
-    --hero: linear-gradient(135deg, #6746e8 0%, #9b3cff 55%, #d63fb0 100%);
-    --hero-soft: linear-gradient(135deg, rgba(103, 70, 232, 0.12), rgba(214, 63, 176, 0.06));
+    --glow-1: rgba(56, 217, 255, 0.10);
+    --glow-2: rgba(163, 77, 255, 0.08);
+    --hero: linear-gradient(135deg, #38D9FF 0%, #A34DFF 55%, #E34CDB 100%);
+    --hero-soft: linear-gradient(135deg, rgba(56, 217, 255, 0.12), rgba(227, 76, 219, 0.06));
     color-scheme: light;
   }
 }
@@ -197,6 +196,7 @@ button {
   border-radius: var(--radius-s);
 }
 .num {
+  font-family: "JetBrains Mono", "Inter", monospace;
   font-variant-numeric: tabular-nums;
 }
 .visually-hidden {

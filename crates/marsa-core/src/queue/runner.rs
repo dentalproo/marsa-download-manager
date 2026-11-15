@@ -159,6 +159,8 @@ struct Running {
     /// From a private window: nothing of it stays if it fails or is taken
     /// out of the queues (review of #91).
     private: bool,
+    /// The SHA-256 the user expects for this download, if any.
+    expected_sha256: Option<String>,
     /// Its own speed limit, its rate read from its item at each look: a
     /// new limit reaches it while it runs (#106).
     limit: SpeedLimit,
@@ -630,6 +632,7 @@ impl Runner {
                             item.ok_given = true;
                         }
                         item.error = None;
+                        item.file_sha256 = None;
                         Ok(Some(item.clone()))
                     })
                     .await;
@@ -693,6 +696,7 @@ impl Runner {
                 }
                 let categories = self.categories.clone().filter(|_| item.categorize);
                 let private = item.private;
+                let expected_sha256 = item.expected_sha256.clone();
                 let events = events.clone();
                 let task_stop = stop.clone();
                 let task = tasks.spawn(async move {
@@ -770,6 +774,7 @@ impl Runner {
                         stop,
                         by_runner: false,
                         private,
+                        expected_sha256,
                         limit,
                     },
                 );
@@ -828,10 +833,11 @@ impl Runner {
                 (id, Err(Error::Io(error)))
             }
         };
-        let (by_runner, private) = running
-            .remove(&id)
-            .map_or((false, false), |run| (run.by_runner, run.private));
-        let event = match &result {
+        let (by_runner, private, expected_sha256) =
+            running.remove(&id).map_or((false, false, None), |run| {
+                (run.by_runner, run.private, run.expected_sha256)
+            });
+        let mut event = match &result {
             Ok(done) => {
                 summary.finished += 1;
                 finished_now.insert(id);
@@ -911,12 +917,36 @@ impl Runner {
         // `None`; the download itself still stands. A private window's
         // download leaves the queues, so its hash is not needed.
         let sha256 = match &result {
-            Ok(done) if !private => {
+            Ok(done) if (!private || expected_sha256.is_some()) => {
                 let path = done.file.clone();
                 blocking(move || Ok(file_sha256(&path))).await?
             }
             _ => None,
         };
+        // The user's own check (a SHA-256 given when adding it): a
+        // mismatch fails the download and removes the file it made.
+        let mut result = result;
+        if let (Some(expected), Some(actual)) = (&expected_sha256, &sha256)
+            && expected != actual
+        {
+            if let Ok(done) = &result {
+                let path = done.file.clone();
+                let _ = blocking(move || {
+                    marsa_platform::fs::remove_file_retrying(&path).ok();
+                    Ok::<_, StoreError>(())
+                })
+                .await;
+            }
+            result = Err(Error::Checksum {
+                expected: expected.clone(),
+                actual: actual.clone(),
+            });
+            event = QueueEvent::Failed {
+                item: id,
+                error: result.as_ref().unwrap_err().to_string(),
+            };
+            summary.finished = summary.finished.saturating_sub(1);
+        }
         let tries = ignore_removed_with(
             self.update(move |queues| {
                 // Its queue's tries for each download (#142).
@@ -1083,8 +1113,6 @@ fn file_sha256(path: &std::path::Path) -> Option<String> {
     use sha2::{Digest, Sha256};
     use std::io::Read;
 
-    // Opened as a regular file and checked on the handle, never through a
-    // link planted in the user's folder (AGENTS.md §10.1).
     let mut file = marsa_platform::fs::open_regular_nofollow(path, false).ok()?;
     let mut hasher = Sha256::new();
     let mut buffer = vec![0u8; 64 * 1024];
@@ -1096,7 +1124,15 @@ fn file_sha256(path: &std::path::Path) -> Option<String> {
         hasher.update(&buffer[..read]);
     }
     let digest = hasher.finalize();
-    Some(digest.iter().map(|b| format!("{b:02x}")).collect())
+    let hex = [
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+    ];
+    let mut out = String::with_capacity(64);
+    for byte in digest.iter() {
+        out.push(hex[(byte >> 4) as usize]);
+        out.push(hex[(byte & 0x0f) as usize]);
+    }
+    Some(out)
 }
 
 /// Runs file work (the queues file and its lock) off the async threads.

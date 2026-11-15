@@ -265,13 +265,13 @@
     flex-direction: column;
     min-height: 0;
     height: 100%;
-    background:
-      radial-gradient(420px 200px at 80% -6%, color-mix(in srgb, var(--accent) 20%, transparent), transparent 70%),
-      linear-gradient(180deg, color-mix(in srgb, var(--accent) 6%, var(--side)), var(--side) 34%);
-    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--side) 70%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-2) 18%, var(--line));
     border-radius: var(--radius-xl);
     overflow: hidden;
     box-shadow: var(--shadow);
+    backdrop-filter: blur(16px) saturate(1.15);
+    -webkit-backdrop-filter: blur(16px) saturate(1.15);
   }
   /* The wordmark: one anchor, one calm line, and the sea's own light. */
   .brand {

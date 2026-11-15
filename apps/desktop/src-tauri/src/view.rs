@@ -218,6 +218,10 @@ pub struct AddRequest {
     /// other download managers); `null`: the program's.
     #[serde(default)]
     pub connections: Option<u32>,
+    /// The SHA-256 the user expects the finished file to have; `null`: no
+    /// check. Normalised (lower case, no `sha256:` prefix) by the core.
+    #[serde(default)]
+    pub expected_sha256: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]

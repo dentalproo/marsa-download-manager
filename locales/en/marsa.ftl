@@ -610,6 +610,8 @@ add-probe-unsure-no-size = { $size }. The server allows ranges but gives no way 
 
 ## «Download file info»: the user's name, category and description (#103, #95)
 add-description = Description
+add-sha256 = SHA-256 to verify
+add-sha256-hint = 64 hex characters (optional)
 add-description-hint = Optional
 add-save-as = Save as
 add-choose-folder = Choose a folder

@@ -787,6 +787,9 @@ pub(crate) fn add_blocking(
         if let Some(n) = request.connections {
             queues.set_connections(id, Some(n))?;
         }
+        if let Some(raw) = request.expected_sha256.as_deref() {
+            queues.set_expected_sha256(id, Some(raw))?;
+        }
         let item = queues.item_mut(id).expect("just added");
         // Without a folder of its own, a download goes by its category.
         item.categorize = request.folder.is_none();
@@ -1211,6 +1214,7 @@ mod tests {
             start: false,
             limit: None,
             connections: None,
+            expected_sha256: None,
         };
         let id = add_blocking(
             &store,

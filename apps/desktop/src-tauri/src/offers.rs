@@ -216,6 +216,7 @@ pub(crate) fn from_browser<R: tauri::Runtime>(
             start: true,
             limit: None,
             connections: None,
+            expected_sha256: None,
         };
         return match add_from_page(
             &app.store,
@@ -400,6 +401,7 @@ mod tests {
             start: true,
             limit: None,
             connections: None,
+            expected_sha256: None,
         };
         let shown = || Some("setup.exe".to_owned());
         assert_eq!(

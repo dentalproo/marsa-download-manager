@@ -668,6 +668,8 @@ add-probe-unsure-no-size = { $size }. السيرفر يدعم التقسيم، �
 
 ## «Download file info»: the user's name, category and description (#103, #95)
 add-description = الوصف
+add-sha256 = SHA-256 للتحقق
+add-sha256-hint = 64 خانة hex (اختياري)
 add-description-hint = اختياري
 add-save-as = احفظ باسم
 add-choose-folder = اختر مجلدًا

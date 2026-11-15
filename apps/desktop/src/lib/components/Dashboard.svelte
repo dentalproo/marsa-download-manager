@@ -373,11 +373,13 @@
     align-items: stretch;
   }
   .card {
-    border: 1px solid var(--line);
+    border: 1px solid color-mix(in srgb, var(--accent-2) 14%, var(--line));
     border-radius: var(--radius-l);
-    background: var(--surface);
+    background: color-mix(in srgb, var(--surface) 82%, transparent);
     box-shadow: var(--shadow);
     min-width: 0;
+    backdrop-filter: blur(10px) saturate(1.05);
+    -webkit-backdrop-filter: blur(10px) saturate(1.05);
   }
   /* The one place with the design's glow: the ring and its halo, only
      while something is moving. */

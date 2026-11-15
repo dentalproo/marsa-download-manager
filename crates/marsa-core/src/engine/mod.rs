@@ -356,6 +356,10 @@ pub enum Error {
         .0.display()
     )]
     NotRegularFile(PathBuf),
+    /// The finished file's SHA-256 did not match the one the user expected
+    /// (given when adding it): the file was removed.
+    #[error("the file SHA-256 is {actual}, not the expected {expected}: it was removed")]
+    Checksum { expected: String, actual: String },
     #[error(transparent)]
     State(#[from] StateError),
     #[error(transparent)]

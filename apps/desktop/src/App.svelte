@@ -1318,11 +1318,13 @@ import { patchRows } from "./lib/progressRows";
     flex-direction: column;
     min-width: 0;
     min-height: 0;
-    background: var(--surface);
-    border: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface) 78%, transparent);
+    border: 1px solid color-mix(in srgb, var(--accent-2) 18%, var(--line));
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow);
     overflow: hidden;
+    backdrop-filter: blur(14px) saturate(1.1);
+    -webkit-backdrop-filter: blur(14px) saturate(1.1);
   }
   /* Nothing to list: a calm invitation, not a blank screen. */
   .empty {

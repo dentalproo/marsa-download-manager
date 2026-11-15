@@ -289,6 +289,7 @@ impl QueuesFile {
                     state_file: None,
                     file: None,
                     file_sha256: None,
+                    expected_sha256: None,
                     error: None,
                     limit: ei.limit,
                     categorize,

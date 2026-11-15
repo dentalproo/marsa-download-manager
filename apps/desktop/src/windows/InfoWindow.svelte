@@ -90,7 +90,7 @@
       const prefs = await api.addPrefs().catch(() => null);
       if (busy || added) return;
       if ((prefs?.start_at_once ?? true) && !probe.page && !runsCode) {
-        const request = { url, name: null, category: null, description: null, queue: "main", folder: null, start: true, limit: null, connections: null };
+        const request = { url, name: null, category: null, description: null, queue: "main", folder: null, start: true, limit: null, connections: null, expected_sha256: null };
         starting = (async () => {
           try {
             const id = offer !== null ? await api.addOffer(offer, request, true) : await api.add(request);

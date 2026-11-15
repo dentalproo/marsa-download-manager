@@ -118,6 +118,11 @@ pub struct Item {
     /// `None` until computed (and on older state files).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub file_sha256: Option<String>,
+    /// SHA-256 the user expects the finished file to have (given when adding
+    /// it). `None`: no check. Verified after the download finishes; a
+    /// mismatch fails the download and removes the file.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_sha256: Option<String>,
     /// Why it failed or stopped, for the user.
     pub error: Option<String>,
     /// Bytes per second for this download alone; `None`: no limit of its
@@ -392,6 +397,7 @@ impl QueuesFile {
             state_file: None,
             file: None,
             file_sha256: None,
+            expected_sha256: None,
             error: None,
             limit: None,
             categorize: false,
@@ -481,6 +487,21 @@ impl QueuesFile {
         }
         let item = self.item_mut(id).ok_or(StoreError::NoSuchItem(id))?;
         item.connections = connections;
+        Ok(())
+    }
+
+    /// Sets item `id`'s expected SHA-256 (the user's, given when adding it);
+    /// `None` or an empty text removes the check. Checked with
+    /// [`check_sha256`], which normalises its form (`sha256:` prefix, case,
+    /// surrounding spaces).
+    pub fn set_expected_sha256(&mut self, id: u64, value: Option<&str>) -> Result<(), StoreError> {
+        let value = value
+            .map(str::trim)
+            .filter(|v| !v.is_empty())
+            .map(check_sha256)
+            .transpose()?;
+        let item = self.item_mut(id).ok_or(StoreError::NoSuchItem(id))?;
+        item.expected_sha256 = value;
         Ok(())
     }
 
@@ -623,6 +644,23 @@ pub fn check_description(text: &str) -> Result<(), String> {
         return Err("the description has control characters or hidden text".into());
     }
     Ok(())
+}
+
+/// Checks and normalises a SHA-256 digest the user gave (as in IDM's
+/// "Verify SHA-256 ..."). Accepts an optional `sha256:` prefix and any
+/// case or surrounding spaces. Returns the lower-case hex digest, or a
+/// refusal if it is not exactly 64 hex characters.
+pub fn check_sha256(input: &str) -> Result<String, StoreError> {
+    let mut s = input.trim().to_ascii_lowercase();
+    if let Some(rest) = s.strip_prefix("sha256:") {
+        s = rest.trim().to_owned();
+    }
+    if s.len() != 64 || !s.chars().all(|c| c.is_ascii_hexdigit()) {
+        return Err(StoreError::Refused(format!(
+            "a SHA-256 digest is 64 hex characters, not {s:?}"
+        )));
+    }
+    Ok(s)
 }
 
 /// The user's details of an item (#95, #103), as its setters make them:

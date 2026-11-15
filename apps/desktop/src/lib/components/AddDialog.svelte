@@ -106,6 +106,7 @@
 
   let name = $state("");
   let description = $state("");
+  let checksum = $state("");
   let ownName = false;
   $effect(() => {
     if (shown && !ownName) name = shown.name;
@@ -139,6 +140,7 @@
       start,
       limit: null,
       connections: ownConnections,
+      expected_sha256: checksum.trim() || null,
     };
     if (!busy) onadd(request, remember && folder !== null ? category : null);
   }
@@ -327,6 +329,19 @@
             placeholder={locale.t("add-description-hint")}
             disabled={page}
             bind:value={description}
+          />
+        </div>
+        <div class="field">
+          <label class="label" for="add-sha256">{locale.t("add-sha256")}</label>
+          <input
+            id="add-sha256"
+            class="input"
+            dir="ltr"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder={locale.t("add-sha256-hint")}
+            disabled={page}
+            bind:value={checksum}
           />
         </div>
       </div>

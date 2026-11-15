@@ -25,4 +25,9 @@ start: boolean, limit: number | null,
  * Its own number of connections, 1 to 32 (the owner's request, as in
  * other download managers); `null`: the program's.
  */
-connections: number | null, };
+connections: number | null, 
+/**
+ * The SHA-256 the user expects the finished file to have; `null`: no
+ * check. Normalised (lower case, no `sha256:` prefix) by the core.
+ */
+expected_sha256: string | null, };

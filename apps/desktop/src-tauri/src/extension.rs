@@ -316,6 +316,7 @@ fn from_extension_with(
                 start: !runs_code,
                 limit: None,
                 connections: None,
+                expected_sha256: None,
             };
             match add_from_page(store, &page, &add, given, headers, runs_code, false) {
                 Ok(_) => marsa_host::Response::ok(),
