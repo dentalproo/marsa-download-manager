@@ -40,7 +40,7 @@ tauri-plugin-dialog = "2.8.3"
 tauri-plugin-notification = "2.7.0"
 tauri-plugin-opener = "2.7.0"
 # The schedule window's time of day (`schedule.rs`), as marsa-core's.
-jiff = "0.2.38"
+jiff = "1.0.0"
 # Dragging a finished file out of «Download complete» (`complete.rs`).
 drag = "2.1.1"
 serde = { version = "1.0.229", features = ["derive"] }
