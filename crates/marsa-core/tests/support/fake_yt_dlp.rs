@@ -33,11 +33,37 @@ fn main() {
         // its path, like --print after_move:filepath.
         "download" => {
             let ext = words.next().unwrap_or("mp4");
-            let file = std::env::current_dir()
-                .unwrap()
-                .join(format!("media.{ext}"));
+            let dir = std::env::current_dir().unwrap();
+            let file = dir.join(format!("media.{ext}"));
             let data = vec![7u8; 1000];
             std::fs::write(&file, &data).unwrap();
+            // Subtitle files, as yt-dlp writes them, when asked.
+            if args.iter().any(|a| a == "--write-subs") {
+                let langs = args
+                    .iter()
+                    .position(|a| a == "--sub-langs")
+                    .and_then(|i| args.get(i + 1))
+                    .map(String::as_str)
+                    .unwrap_or("all");
+                let sub_ext = args
+                    .iter()
+                    .position(|a| a == "--sub-format")
+                    .and_then(|i| args.get(i + 1))
+                    .map(String::as_str)
+                    .unwrap_or("vtt");
+                let list: Vec<&str> = if langs == "all" {
+                    vec!["en"]
+                } else {
+                    langs.split(',').collect()
+                };
+                for lang in list {
+                    std::fs::write(
+                        dir.join(format!("media.{lang}.{sub_ext}")),
+                        format!("subtitle {lang}"),
+                    )
+                    .unwrap();
+                }
+            }
             println!("marsa-progress 500 1000 NA 250.0");
             println!("marsa-progress 1000 1000 NA NA");
             println!("{}", file.display());

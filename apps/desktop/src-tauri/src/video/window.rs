@@ -86,6 +86,7 @@ pub fn receive<R: tauri::Runtime>(
                 .display()
                 .to_string(),
             choice,
+            subtitles: None,
             status: StatusView::Waiting,
             size,
             done: 0,

@@ -13,7 +13,7 @@ use super::choice::{from_list, still_offered};
 use super::probe::{ahead_fits, probe};
 use super::queue::{QUEUE_VIDEO_DONE, known_queue, pump};
 use super::rows::{key_of, remove_leftovers, save_rows, with_row};
-use super::views::{ChoiceView, VideoErrorView};
+use super::views::{ChoiceView, SubtitlesView, VideoErrorView};
 use super::{FIRST_ID, Row, VideoState, runner};
 use crate::view::StatusView;
 use marsa_core::video::{Download, Probed, VideoEvent};
@@ -36,12 +36,16 @@ pub fn video_download<R: tauri::Runtime>(
     state: State<'_, VideoState>,
     url: String,
     choice: ChoiceView,
+    subtitles: Option<SubtitlesView>,
     dest: String,
     name: String,
     queue: Option<String>,
     handle: tauri::AppHandle<R>,
 ) -> Result<u64, String> {
     let queue = known_queue(&app, queue);
+    if let Some(subs) = &subtitles {
+        subs.checked().map_err(|e| e.to_string())?;
+    }
     let id = FIRST_ID + state.next.fetch_add(1, Ordering::SeqCst) + 1;
     let private = state.private.lock().unwrap().contains(&url);
     let url = state
@@ -57,6 +61,7 @@ pub fn video_download<R: tauri::Runtime>(
         name,
         folder: dest,
         choice,
+        subtitles,
         status: StatusView::Waiting,
         size: None,
         done: 0,
@@ -84,6 +89,8 @@ pub fn video_download<R: tauri::Runtime>(
 pub struct NewVideo {
     pub url: String,
     pub title: Option<String>,
+    #[serde(default)]
+    pub subtitles: Option<SubtitlesView>,
 }
 
 /// A playlist's chosen videos join the list at once, each at its best,
@@ -148,6 +155,7 @@ pub(super) fn new_row(id: u64, item: NewVideo, dest: &str) -> Row {
         name,
         folder: dest.to_owned(),
         choice: ChoiceView::Best,
+        subtitles: item.subtitles,
         status: StatusView::Waiting,
         size: None,
         done: 0,
@@ -324,6 +332,12 @@ pub(super) fn start<R: tauri::Runtime>(handle: tauri::AppHandle<R>, id: u64, ask
                             with_row(&handle.state::<VideoState>(), id, |row| {
                                 row.agents = agents;
                             });
+                            let subs = row
+                                .subtitles
+                                .as_ref()
+                                .map(|s| s.checked())
+                                .transpose()
+                                .map_err(VideoErrorView::from)?;
                             let request = Download {
                                 url: &row.url,
                                 choice: &choice,
@@ -331,6 +345,7 @@ pub(super) fn start<R: tauri::Runtime>(handle: tauri::AppHandle<R>, id: u64, ask
                                 cookies: cookies.as_deref(),
                                 dest: std::path::Path::new(&row.folder),
                                 name: &row.name,
+                                subtitles: subs.as_ref(),
                             };
                             runner
                                 .download_keeping(&request, Some(&key_of(id)), &stop, &mut on_event)

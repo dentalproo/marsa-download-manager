@@ -329,6 +329,7 @@ mod tests {
                 NewVideo {
                     url: "https://example.com/v".into(),
                     title: None,
+                    subtitles: None,
                 },
                 "/tmp",
             )

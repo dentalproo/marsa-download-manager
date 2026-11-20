@@ -63,6 +63,11 @@
   // so it starts now; a playlist's videos all go into the one chosen.
   let queues = $state<string[]>([]);
   let queue = $state("");
+  // Subtitles to save beside the video: empty languages means all available.
+  let subsOn = $state(false);
+  let subsLangs = $state("");
+  let subsFormat = $state<"vtt" | "srt">("vtt");
+  const subtitles = () => (subsOn ? { langs: subsLangs.trim(), format: subsFormat } : null);
   // The browser's download that waits for the tools: it starts again
   // once they are in, and goes if the user cancels instead.
   let afterTools: number | null = null;
@@ -253,7 +258,7 @@
   async function downloadOne(choice: Option["choice"], file: string) {
     step = { kind: "downloading", label: file, done: 0, total: null, speed: null, id: null };
     try {
-      const id = await api.videoDownload(url, choice, folder, file, queue || null);
+      const id = await api.videoDownload(url, choice, folder, file, queue || null, subtitles());
       await api.openProgress(id, file);
       await api.closeWindow();
     } catch (e) {
@@ -265,7 +270,7 @@
    * best, and the window closes; Marsa asks each page and downloads it in
    * turn, and one that fails says why in the list. */
   async function downloadList(info: Extract<VideoInfoView, { kind: "playlist" }>, chosen: boolean[]) {
-    const items = info.entries.filter((e, i) => chosen[i] && e.url && !e.playlist).map((e) => ({ url: e.url!, title: e.title }));
+    const items = info.entries.filter((e, i) => chosen[i] && e.url && !e.playlist).map((e) => ({ url: e.url!, title: e.title, subtitles: subtitles() }));
     step = { kind: "downloading", label: info.title, done: 0, total: null, speed: null, id: null };
     try {
       await api.videoAddMany(url, items, folder, queue || null);
@@ -389,6 +394,16 @@
         <div class="with"><bdi class="box path" dir="ltr">{folder}</bdi><button class="btn" onclick={() => void chooseFolder()}>{locale.t("add-change")}</button></div>
         <label class="label" for="video-queue">{locale.t("add-queue")}</label>
         <div class="box qpick"><QueuePick id="video-queue" names={queues} bind:value={queue} none={locale.t("queue-none-video")} /></div>
+        <label class="check"><input type="checkbox" bind:checked={subsOn} />{locale.t("video-subtitles")}</label>
+        {#if subsOn}
+          <label class="label" for="video-subs-langs">{locale.t("video-subtitles-langs")}</label>
+          <input id="video-subs-langs" class="box" dir="ltr" autocomplete="off" spellcheck="false" placeholder={locale.t("video-subtitles-hint")} bind:value={subsLangs} />
+          <label class="label" for="video-subs-format">{locale.t("video-subtitles-format")}</label>
+          <select id="video-subs-format" class="box" bind:value={subsFormat}>
+            <option value="vtt">WebVTT (.vtt)</option>
+            <option value="srt">SubRip (.srt)</option>
+          </select>
+        {/if}
       </div>
       <div class="actions">
         <button class="btn primary" disabled={!name.trim() || !folder} onclick={() => void downloadOne(step.kind === "video" ? step.list[pick]!.choice : { kind: "audio_only" }, name.trim())}>
@@ -458,6 +473,16 @@
         <div class="with"><bdi class="box path" dir="ltr">{folder}</bdi><button class="btn" onclick={() => void chooseFolder()}>{locale.t("add-change")}</button></div>
         <label class="label" for="video-queue">{locale.t("add-queue")}</label>
         <div class="box qpick"><QueuePick id="video-queue" names={queues} bind:value={queue} none={locale.t("queue-none-video")} /></div>
+        <label class="check"><input type="checkbox" bind:checked={subsOn} />{locale.t("video-subtitles")}</label>
+        {#if subsOn}
+          <label class="label" for="video-subs-langs">{locale.t("video-subtitles-langs")}</label>
+          <input id="video-subs-langs" class="box" dir="ltr" autocomplete="off" spellcheck="false" placeholder={locale.t("video-subtitles-hint")} bind:value={subsLangs} />
+          <label class="label" for="video-subs-format">{locale.t("video-subtitles-format")}</label>
+          <select id="video-subs-format" class="box" bind:value={subsFormat}>
+            <option value="vtt">WebVTT (.vtt)</option>
+            <option value="srt">SubRip (.srt)</option>
+          </select>
+        {/if}
       </div>
       <!-- Its room is kept: the buttons do not move when it comes. -->
       <div class="slot">

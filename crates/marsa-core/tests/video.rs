@@ -8,8 +8,8 @@ use std::path::{Path, PathBuf};
 
 use marsa_core::tools::{Pinned, Tool, ToolError, Toolbox};
 use marsa_core::video::{
-    Choice, Download, Format, JsRuntime, Probed, Runs, ToolProblem, VideoError, VideoEvent,
-    VideoRunner,
+    Choice, Download, Format, JsRuntime, Probed, Runs, Subtitles, ToolProblem, VideoError,
+    VideoEvent, VideoRunner,
 };
 use marsa_core::{Engine, Options, Stop};
 
@@ -240,6 +240,9 @@ const ALLOWED: &[&str] = &[
     "--format",
     "--extract-audio",
     "--audio-format",
+    "--write-subs",
+    "--sub-langs",
+    "--sub-format",
     "--print",
     "--progress-template",
     "--",
@@ -257,6 +260,8 @@ fn options(a: &[String]) -> Vec<String> {
         "--output",
         "--format",
         "--audio-format",
+        "--sub-langs",
+        "--sub-format",
         "--print",
         "--progress-template",
     ];
@@ -311,6 +316,7 @@ async fn no_run_passes_an_option_outside_the_allow_list() {
                     cookies: Some("sid=1"),
                     dest: &s.dest,
                     name: "x",
+                    subtitles: None,
                 };
                 s.runner
                     .download(&request, &Stop::new(), &mut |_| {})
@@ -350,6 +356,7 @@ async fn nothing_from_the_page_becomes_an_option() {
             cookies: None,
             dest: &s.dest,
             name: "x",
+            subtitles: None,
         };
         let err = s
             .runner
@@ -446,6 +453,7 @@ async fn a_download_takes_the_page_s_title_safely_and_never_replaces_a_file() {
         cookies: None,
         dest: &s.dest,
         name: "../دورة Rust (Part 2)",
+        subtitles: None,
     };
     let file = s
         .runner
@@ -490,6 +498,36 @@ async fn a_download_takes_the_page_s_title_safely_and_never_replaces_a_file() {
     assert_eq!(a[pos + 1], "media.%(ext)s");
 }
 
+/// Subtitles are written beside the video, with its own numbered name.
+#[tokio::test]
+async fn subtitles_are_asked_for_and_saved_beside_the_video() {
+    let s = setup("download mp4");
+    let subs = Subtitles::new(" ar , en ", "vtt").unwrap();
+    let request = Download {
+        url: "https://example.com/v",
+        choice: &Choice::Format("hls-360".into()),
+        formats: known(),
+        cookies: None,
+        dest: &s.dest,
+        name: "درس",
+        subtitles: Some(&subs),
+    };
+    let file = s
+        .runner
+        .download(&request, &Stop::new(), &mut |_| {})
+        .await
+        .unwrap();
+    assert!(file.ends_with("درس.mp4"), "{:?}", file);
+    let a = args(&calls(&s.control)[0]);
+    assert!(a.contains(&"--write-subs".to_owned()));
+    let at = a.iter().position(|x| x == "--sub-langs").unwrap();
+    assert_eq!(a[at + 1], "ar,en");
+    let at = a.iter().position(|x| x == "--sub-format").unwrap();
+    assert_eq!(a[at + 1], "vtt");
+    assert_eq!(fs::read(s.dest.join("درس.ar.vtt")).unwrap(), b"subtitle ar");
+    assert_eq!(fs::read(s.dest.join("درس.en.vtt")).unwrap(), b"subtitle en");
+}
+
 #[tokio::test]
 async fn a_name_that_came_with_an_extension_gets_only_yt_dlp_s() {
     for (name, wanted) in [
@@ -507,6 +545,7 @@ async fn a_name_that_came_with_an_extension_gets_only_yt_dlp_s() {
             cookies: None,
             dest: &s.dest,
             name,
+            subtitles: None,
         };
         let file = s
             .runner
@@ -546,6 +585,7 @@ async fn a_merge_s_progress_goes_on_from_the_picture_to_the_sound() {
             cookies: None,
             dest: &s.dest,
             name: "x",
+            subtitles: None,
         };
         let mut seen = Vec::new();
         s.runner
@@ -572,6 +612,7 @@ async fn a_file_printed_outside_the_output_folder_is_refused() {
         cookies: None,
         dest: &s.dest,
         name: "x",
+        subtitles: None,
     };
     let err = s
         .runner
@@ -810,6 +851,7 @@ async fn a_stopped_run_ends_its_tree_and_leaves_nothing() {
         cookies: Some("sid=abc"),
         dest: &s.dest,
         name: "x",
+        subtitles: None,
     };
     let err = s
         .runner
@@ -850,6 +892,7 @@ async fn a_stopped_video_continues_from_its_kept_folder() {
         cookies: None,
         dest: &s.dest,
         name: "x",
+        subtitles: None,
     };
     let err = s
         .runner
@@ -954,6 +997,7 @@ async fn a_download_dropped_mid_way_ends_its_tree_and_leaves_nothing() {
         cookies: Some("sid=abc"),
         dest: &s.dest,
         name: "x",
+        subtitles: None,
     };
     let stop = Stop::new();
     let mut on_event = |_| {};
@@ -1062,6 +1106,7 @@ async fn an_hls_playlist_protected_in_a_way_yt_dlp_misses_is_refused_before_it_r
         cookies: None,
         dest: &s.dest,
         name: "x",
+        subtitles: None,
     };
     let err = s
         .runner
@@ -1298,6 +1343,7 @@ async fn a_failed_run_leaves_no_cookie_file() {
         cookies: Some("sid=SECRET"),
         dest: &s.dest,
         name: "x",
+        subtitles: None,
     };
     let err = s
         .runner
@@ -1338,6 +1384,7 @@ async fn a_choice_the_probe_did_not_find_is_refused() {
             cookies: None,
             dest: &s.dest,
             name: "x",
+            subtitles: None,
         };
         let err = s
             .runner

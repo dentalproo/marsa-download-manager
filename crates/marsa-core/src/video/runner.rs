@@ -90,6 +90,8 @@ pub struct Download<'a> {
     pub dest: &'a Path,
     /// Its name, without extension (the page's title, usually).
     pub name: &'a str,
+    /// Subtitles to write beside the video, if any.
+    pub subtitles: Option<&'a super::Subtitles>,
 }
 
 impl std::fmt::Debug for Download<'_> {
@@ -428,6 +430,7 @@ mod tests {
             cookies: Some("sid=SECRET"),
             dest: Path::new("/tmp"),
             name: "x",
+            subtitles: None,
         };
         let shown = format!("{request:?}");
         assert!(!shown.contains("SECRET"), "{shown}");

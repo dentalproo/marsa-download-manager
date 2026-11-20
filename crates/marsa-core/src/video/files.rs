@@ -18,6 +18,7 @@ pub fn move_video(file: &Path, folder: &Path, name: &str) -> io::Result<PathBuf>
         name: name.to_owned(),
         origin: String::new(),
         keep: None,
+        subs: false,
     };
     match finish(folder).place(file) {
         Err(err) if err.kind() == io::ErrorKind::CrossesDevices => {

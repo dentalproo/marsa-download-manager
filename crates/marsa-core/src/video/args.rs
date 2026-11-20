@@ -45,6 +45,12 @@ pub enum Arg {
     Format(String),
     /// Audio only, as m4a (AAC).
     AudioOnlyM4a,
+    /// Write subtitle files beside the video.
+    WriteSubtitles,
+    /// Which subtitle languages to write, as a comma-separated list or `all`.
+    SubLangs(String),
+    /// The subtitle file format (`vtt` or `srt`).
+    SubFormat(String),
     /// Prints the final path, once moved, for Marsa to read.
     PrintFinalPath,
     /// Prints progress in a fixed form Marsa reads.
@@ -146,6 +152,15 @@ impl Arg {
                 add("--extract-audio");
                 add("--audio-format");
                 add("m4a");
+            }
+            Arg::WriteSubtitles => add("--write-subs"),
+            Arg::SubLangs(langs) => {
+                add("--sub-langs");
+                add(langs);
+            }
+            Arg::SubFormat(format) => {
+                add("--sub-format");
+                add(format);
             }
             Arg::PrintFinalPath => {
                 add("--print");

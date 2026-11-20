@@ -67,6 +67,23 @@ pub enum ChoiceView {
     Best,
 }
 
+/// Subtitles to save beside a video, as the window says them.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct SubtitlesView {
+    /// Comma-separated language codes, or empty for every language.
+    pub langs: String,
+    /// `vtt` or `srt`.
+    pub format: String,
+}
+
+impl SubtitlesView {
+    /// Checks and converts to the engine's value.
+    pub fn checked(&self) -> Result<marsa_core::video::Subtitles, marsa_core::video::VideoError> {
+        marsa_core::video::Subtitles::new(&self.langs, &self.format)
+    }
+}
+
 impl From<Choice> for ChoiceView {
     fn from(c: Choice) -> Self {
         match c {

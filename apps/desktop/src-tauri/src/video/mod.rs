@@ -41,7 +41,7 @@ pub use rows::{
     url_of, views,
 };
 pub use tools::{update_tools, video_tools_status};
-pub use views::ChoiceView;
+pub use views::{ChoiceView, SubtitlesView};
 pub use window::{CAPABILITY, Chosen, asked, receive};
 
 /// What the app keeps for video downloads.
@@ -145,6 +145,9 @@ struct Row {
     name: String,
     folder: String,
     choice: ChoiceView,
+    /// Subtitles to write beside this video, if the user chose them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    subtitles: Option<SubtitlesView>,
     status: StatusView,
     size: Option<u64>,
     done: u64,
@@ -240,6 +243,7 @@ mod tests {
                 video: "137".into(),
                 audio: "140".into(),
             },
+            subtitles: None,
             status,
             size: Some(100),
             done: 40,
@@ -259,6 +263,7 @@ mod tests {
         NewVideo {
             url: url.into(),
             title: title.map(Into::into),
+            subtitles: None,
         }
     }
 }

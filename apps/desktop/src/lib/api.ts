@@ -25,6 +25,7 @@ import type { GrabAdded } from "./bindings/GrabAdded";
 import type { VideoInfoView } from "./bindings/VideoInfoView";
 import type { VideoErrorView } from "./bindings/VideoErrorView";
 import type { ChoiceView } from "./bindings/ChoiceView";
+import type { SubtitlesView } from "./bindings/SubtitlesView";
 import type { NewVideo } from "./bindings/NewVideo";
 import type { DownloadView } from "./bindings/DownloadView";
 import type { Snapshot } from "./bindings/Snapshot";
@@ -225,8 +226,8 @@ export const api = {
   /** Brings «Video quality» to the front. */
   showVideoWindow: () => invoke<void>("show_video_window"),
   onVideoWindow: (handler: (open: boolean) => void): Promise<UnlistenFn> => listen<boolean>("video-window", (e) => handler(e.payload)),
-  videoDownload: (url: string, choice: ChoiceView, dest: string, name: string, queue: string | null = null) =>
-    invoke<number>("video_download", { url, choice, dest, name, queue }),
+  videoDownload: (url: string, choice: ChoiceView, dest: string, name: string, queue: string | null = null, subtitles: SubtitlesView | null = null) =>
+    invoke<number>("video_download", { url, choice, subtitles, dest, name, queue }),
   videoAddMany: (page: string, items: NewVideo[], dest: string, queue: string | null = null) =>
     invoke<number[]>("video_add_many", { page, items, dest, queue }),
   videoCancel: (id: number) => invoke<void>("video_cancel", { id }),

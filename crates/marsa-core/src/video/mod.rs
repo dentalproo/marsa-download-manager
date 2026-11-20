@@ -34,10 +34,12 @@ mod messages;
 mod output;
 mod runner;
 mod runs;
+mod subtitles;
 
 use args::format_spec;
 pub use args::{Arg, check_format_id, command_line};
 pub use fast::Saved;
+pub use subtitles::{SubFormat, Subtitles};
 // `fast.rs` reaches these as its parent's.
 use download::Finish;
 use files::without_media_extension;

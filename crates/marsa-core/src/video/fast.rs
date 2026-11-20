@@ -398,6 +398,7 @@ impl VideoRunner {
                 .map(|u| u.origin().ascii_serialization())
                 .unwrap_or_default(),
             keep: None,
+            subs: false,
         };
         tokio::task::spawn_blocking(move || {
             let placed = finish.place(&merged);
@@ -642,6 +643,7 @@ impl VideoRunner {
             cookies: None,
             dest: saved.dest,
             name: saved.name,
+            subtitles: None,
         };
         match self
             .fast_download(&request, &parts, stop, on_event, false)

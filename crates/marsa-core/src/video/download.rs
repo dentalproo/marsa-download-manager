@@ -38,13 +38,15 @@ pub(super) struct Finish {
     /// The page's origin, for the mark "from the internet" (#90): never its
     /// path or query, which may hold a token.
     pub(super) origin: String,
+    /// Whether yt-dlp was asked to write subtitles beside the video.
+    pub(super) subs: bool,
 }
 
 impl Finish {
     /// Marks `file` as from the internet, then moves it into `dest` as
     /// `<name>.<its extension>`, numbered if that is taken, never over
     /// another file. Blocking.
-    pub(super) fn place(self, file: &Path) -> io::Result<PathBuf> {
+    pub(super) fn place(&self, file: &Path) -> io::Result<PathBuf> {
         let ext = file
             .extension()
             .and_then(|e| e.to_str())
@@ -81,6 +83,55 @@ impl Finish {
         }
         Err(io::Error::other(format!("no free name for {wanted}")))
     }
+
+    /// Moves the subtitle files yt-dlp wrote in `out` (named `media.<lang>.vtt`
+    /// and so on) next to the placed video, using the video's own numbered
+    /// name so a repeat download does not overwrite another's subtitles.
+    /// A file that cannot be moved is skipped: the video is already saved.
+    pub(super) fn place_subtitles(&self, out: &Path, video: &Path) -> Vec<PathBuf> {
+        let stem = video
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("video");
+        let mut saved = Vec::new();
+        let Ok(entries) = std::fs::read_dir(out) else {
+            return saved;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+                continue;
+            };
+            let Some(ext) = path.extension().and_then(|e| e.to_str()) else {
+                continue;
+            };
+            if ext != "vtt" && ext != "srt" {
+                continue;
+            }
+            // yt-dlp names them `media.en.vtt`, `media.ar.srt`, &c.
+            let lang = name
+                .strip_prefix("media.")
+                .and_then(|rest| rest.strip_suffix(&format!(".{ext}")))
+                .unwrap_or("sub");
+            if lang.is_empty()
+                || lang.len() > 12
+                || !lang
+                    .bytes()
+                    .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+            {
+                continue;
+            }
+            let wanted = format!("{stem}.{lang}.{ext}");
+            let Ok(target) = crate::sanitize::confine(&self.dest, &wanted) else {
+                continue;
+            };
+            if marsa_platform::fs::rename_noreplace(&path, &target).is_ok() {
+                let _ = marsa_platform::fs::sync_dir(&self.dest);
+                saved.push(target);
+            }
+        }
+        saved
+    }
 }
 
 impl VideoRunner {
@@ -114,6 +165,7 @@ impl VideoRunner {
             cookies,
             dest,
             name,
+            subtitles,
             ..
         } = *request;
         let url = checked(url)?;
@@ -121,7 +173,10 @@ impl VideoRunner {
         let choice_args = choice.args()?;
         self.check_hls(request, stop).await?;
         // YouTube: Marsa's own engine, when the probe's links allow it.
-        if let Some(parts) = fast::parts(choice, request.formats) {
+        // Subtitles need yt-dlp: its run writes them beside the video.
+        if subtitles.is_none()
+            && let Some(parts) = fast::parts(choice, request.formats)
+        {
             let parts: Vec<fast::Part> = parts.into_iter().map(fast::Part::of).collect();
             match self
                 .fast_download(request, &parts, stop, on_event, true)
@@ -154,11 +209,19 @@ impl VideoRunner {
             Arg::PrintFinalPath,
         ]);
         args.extend(choice_args);
+        if let Some(subs) = subtitles {
+            args.extend([
+                Arg::WriteSubtitles,
+                Arg::SubLangs(subs.langs_arg().to_owned()),
+                Arg::SubFormat(subs.format.as_str().to_owned()),
+            ]);
+        }
         let finish = Finish {
             dest: dest.to_owned(),
             name: name.to_owned(),
             origin: url.origin().ascii_serialization(),
             keep: keep.map(str::to_owned),
+            subs: subtitles.is_some(),
         };
         let mut overall = Overall::new(expected_size(choice, request.formats));
         let mut on_part = |event| on_event(overall.of(event));
@@ -356,7 +419,13 @@ impl VideoRunner {
                     (&run.out, read.final_path, finish)
             {
                 // Before the run's folders go: the file is moved out.
-                output.placed = Some(place(out, &printed).and_then(|file| finish.place(&file)));
+                output.placed = Some(place(out, &printed).and_then(|file| {
+                    let video = finish.place(&file)?;
+                    if finish.subs {
+                        finish.place_subtitles(out, &video);
+                    }
+                    Ok(video)
+                }));
             }
             // A kept folder goes once its video is out.
             let mut run = run;
@@ -425,6 +494,7 @@ mod tests {
                 name: title.clone(),
                 origin: "https://example.com".into(),
                 keep: None,
+                subs: false,
             };
             let target = finish.place(&placed).unwrap();
             let got = target.file_name().unwrap().to_str().unwrap();

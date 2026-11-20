@@ -610,8 +610,8 @@ add-probe-unsure-no-size = { $size }. The server allows ranges but gives no way 
 
 ## «Download file info»: the user's name, category and description (#103, #95)
 add-description = Description
-add-sha256 = SHA-256 to verify
-add-sha256-hint = 64 hex characters (optional)
+add-sha256 = Checksum to verify
+add-sha256-hint = Sixty-four hex characters (optional)
 add-description-hint = Optional
 add-save-as = Save as
 add-choose-folder = Choose a folder
@@ -670,6 +670,10 @@ video-audio-only = Sound only ({ $format })
 video-sound = Sound
 video-sound-original = original
 video-sound-dubbed = dubbed
+video-subtitles = Save subtitles
+video-subtitles-langs = Languages
+video-subtitles-hint = ar,en — or leave empty for all
+video-subtitles-format = Subtitle format
 video-playlist =
     { PLURAL($count) ->
         [one] A playlist with { $count } video.

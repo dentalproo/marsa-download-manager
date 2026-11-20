@@ -380,6 +380,7 @@ async fn download(
         cookies: None,
         dest: &s.dest,
         name: &video.title,
+        subtitles: None,
     };
     s.runner.download(&request, &Stop::new(), &mut |_| {}).await
 }

@@ -668,8 +668,8 @@ add-probe-unsure-no-size = { $size }. السيرفر يدعم التقسيم، �
 
 ## «Download file info»: the user's name, category and description (#103, #95)
 add-description = الوصف
-add-sha256 = SHA-256 للتحقق
-add-sha256-hint = 64 خانة hex (اختياري)
+add-sha256 = بصمة التحقق
+add-sha256-hint = ستون حرفًا سداسيًا (اختياري)
 add-description-hint = اختياري
 add-save-as = احفظ باسم
 add-choose-folder = اختر مجلدًا
@@ -736,6 +736,10 @@ video-audio-only = صوت فقط ({ $format })
 video-sound = الصوت
 video-sound-original = الأصلي
 video-sound-dubbed = مدبلج
+video-subtitles = حفظ الترجمات
+video-subtitles-langs = اللغات
+video-subtitles-hint = ar,en — أو اتركه فارغًا لكل اللغات
+video-subtitles-format = صيغة الترجمة
 video-playlist =
     { PLURAL($count) ->
         [zero] قائمة تشغيل فارغة.
